@@ -4,7 +4,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from . import database, models
 from sqlalchemy.orm import Session
-from .routers import user
+from .routers import user, auth
 
 models.Base.metadata.create_all(bind=database.engine)
 
@@ -25,6 +25,8 @@ while True :
 
 
 app.include_router(user.router)
+app.include_router(auth.router)
+
 
 @app.get('/')
 def get_users (db : Session = Depends(database.get_db)) : 
