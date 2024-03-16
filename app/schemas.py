@@ -6,7 +6,7 @@ class UserCreate (BaseModel) :
     first_name : str
     last_name : str
     email : EmailStr
-    phone_number : int
+    phone_number : str
     password : str
 
 class UserPostResponse (BaseModel) :
@@ -14,7 +14,7 @@ class UserPostResponse (BaseModel) :
     first_name : str
     last_name : str
     email : EmailStr
-    phone_number : int
+    phone_number : str
 
 class UserGetResponse (UserPostResponse) :
     password : str

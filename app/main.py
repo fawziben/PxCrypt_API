@@ -5,11 +5,22 @@ from psycopg2.extras import RealDictCursor
 from . import database, models
 from sqlalchemy.orm import Session
 from .routers import user, auth
+from fastapi.middleware.cors import CORSMiddleware
+
 
 models.Base.metadata.create_all(bind=database.engine)
 
 
 app = FastAPI()
+
+# Configurer les en-têtes CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Autoriser les requêtes depuis n'importe quelle origine
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"],  # Autoriser les méthodes HTTP spécifiées
+    allow_headers=["*"],  # Autoriser tous les en-têtes dans les requêtes
+)
 
 
 while True :
