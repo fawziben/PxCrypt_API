@@ -12,5 +12,6 @@ class User (Base) :
     phone_number = Column(String(length=10))
     email = Column(String, unique=True, nullable=False) 
     password = Column (String,nullable=False)
+    private_key = Column (String,server_default=None)
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text('now()'))

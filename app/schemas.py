@@ -8,6 +8,7 @@ class UserCreate (BaseModel) :
     email : EmailStr
     phone_number : str
     password : str
+    private_key: Optional[str] = None
 
 class UserPostResponse (BaseModel) :
     id : int
@@ -15,6 +16,7 @@ class UserPostResponse (BaseModel) :
     last_name : str
     email : EmailStr
     phone_number : str
+
 
 class UserGetResponse (UserPostResponse) :
     password : str
