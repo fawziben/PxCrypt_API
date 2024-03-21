@@ -26,6 +26,6 @@ def generate_aes_key(password):
         iterations=iterations,
         backend=default_backend()
     )
-    key = kdf.derive(b'password_1234')  # Remplacez 'password_1234' par votre mot de passe
+    key = kdf.derive(password.encode())  # Utilisez le mot de passe fourni pour dériver la clé
 
-    return key.hex() # Renvoie la clé et le sel sous forme hexadécimale
+    return key
