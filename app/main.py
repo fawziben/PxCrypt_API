@@ -4,7 +4,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from . import database, models
 from sqlalchemy.orm import Session
-from .routers import user, auth, crypt
+from .routers import user, auth, crypt, decrypt
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -38,6 +38,8 @@ while True :
 app.include_router(user.router)
 app.include_router(auth.router)
 app.include_router(crypt.router)
+app.include_router(decrypt.router)
+
 
 
 @app.get('/')

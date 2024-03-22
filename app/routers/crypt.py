@@ -5,42 +5,42 @@ import os
 from .. import oauth2, models
 from ..database import get_db
 from sqlalchemy.orm import Session
-import binascii  # Utilisé pour convertir une chaîne hexadécimale en octets
+from base64 import b64encode
 
 router = APIRouter()
 
 @router.post("/encrypt")
 async def upload_file(file: UploadFile = File(...), current_user = Depends(oauth2.get_current_user)):
     try:
-        # Lire le contenu du fichier
+        # Lire le contenu du fichier en mode binaire pour obtenir des octets
         file_content = await file.read()
-        print("File content:", file_content)
+        
+        # Générer un vecteur d'initialisation aléatoire
+        iv = os.urandom(16)
 
-        # Récupérer la clé privée de l'utilisateur sous forme d'une chaîne d'échappement Python depuis la base de données
+        # Récupérer la clé privée de l'utilisateur depuis la base de données
         private_key_str = current_user.private_key
-
-        # Convertir la chaîne d'échappement Python en une séquence d'octets hexadécimaux
         private_key_hex = bytes.fromhex(private_key_str[2:])  # Ignorer le préfixe '\x'
 
-        # Vérifier la longueur de la clé privée
-        print("Length of private key:", len(private_key_hex))
-
         # Initialiser le chiffrement AES avec la clé et le mode CBC
-        cipher = Cipher(algorithms.AES(private_key_hex), modes.CBC(os.urandom(16)), backend=default_backend())
+        cipher = Cipher(algorithms.AES(private_key_hex), modes.CBC(iv), backend=default_backend())
         encryptor = cipher.encryptor()
 
-        # Ajouter des octets de bourrage pour que la taille du fichier soit un multiple de 16
-        padded_content = file_content + b"\0" * (16 - (len(file_content) % 16))
+        # Chiffrer les données
+        encrypted_content = encryptor.update(file_content) + encryptor.finalize()
 
-        # Chiffrer le contenu
-        encrypted_content = encryptor.update(padded_content) + encryptor.finalize()
+        # Combiner l'IV et les données chiffrées
+        encrypted_data = iv + encrypted_content
 
-        # Enregistrer le fichier crypté sur le serveur
+        # Convertir les données chiffrées en base64 pour la transmission
+        encrypted_data_b64 = b64encode(encrypted_data)
+
+        # Enregistrer les données chiffrées sur le serveur (facultatif)
         with open(file.filename + ".enc", "wb") as f:
-            f.write(encrypted_content)
+            f.write(encrypted_data)
 
-        print("File encrypted successfully")
-        return Response(content=encrypted_content, media_type='application/octet-stream')
+        return Response(content=encrypted_data_b64, media_type="application/octet-stream")
+
     except Exception as e:
         print("Error:", e)
         raise HTTPException(status_code=500, detail=str(e))
