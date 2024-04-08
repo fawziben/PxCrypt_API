@@ -17,6 +17,9 @@ class UserPostResponse (BaseModel) :
     email : EmailStr
     phone_number : str
 
+class GetUsersResponse (BaseModel) : 
+    first_name : str
+    last_name : str
 
 class UserGetResponse (UserPostResponse) :
     password : str

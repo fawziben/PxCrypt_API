@@ -9,6 +9,14 @@ router = APIRouter(
     tags=['Users']
 )
 
+
+@router.get('/', status_code=status.HTTP_200_OK, response_model=list[schemas.GetUsersResponse])
+def get_users(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)): 
+    users = db.query(models.User).all()
+    if not users: 
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found")
+    return users
+
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserPostResponse)
 def create_user(user : schemas.UserCreate, db: Session = Depends(get_db)):
     try:

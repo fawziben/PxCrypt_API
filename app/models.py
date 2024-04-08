@@ -1,6 +1,7 @@
 from .database import Base
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, TIMESTAMP
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, TIMESTAMP, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
 class User (Base) : 
@@ -15,3 +16,26 @@ class User (Base) :
     private_key = Column (String,server_default=None)
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text('now()'))
+    
+class Sfile (Base) : 
+    __tablename__ = "sfiles"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    id_sender = Column(Integer, ForeignKey('users.id'), nullable=False)
+    id_receiver = Column(Integer,ForeignKey('users.id'), nullable=False)
+    id_file = Column(Integer, ForeignKey('ufiles.id'), nullable=False)
+    shared_at = Column(TIMESTAMP(timezone=True),
+                        nullable=False, server_default=text('now()'))
+    
+    sender = relationship("User", foreign_keys=[id_sender])
+    receiver = relationship("User", foreign_keys=[id_receiver])
+    file = relationship("Ufile", foreign_keys=[id_file])
+
+    
+class Ufile (Base) : 
+    __tablename__ = "ufiles"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    name = Column(String, nullable=False)
+    size = Column(String, nullable=False)
+    algorithm = Column(String, nullable=False)
