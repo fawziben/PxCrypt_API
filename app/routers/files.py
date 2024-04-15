@@ -34,6 +34,7 @@ async def share_with(file: UploadFile = File(...), db: Session = Depends(get_db)
 async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     encrypted_content_b64 = await file.read()
 
+
     # Créer le répertoire s'il n'existe pas
     Path('test').mkdir(parents=True, exist_ok=True)
 
