@@ -18,6 +18,7 @@ class UserPostResponse (BaseModel) :
     phone_number : str
 
 class GetUsersResponse (BaseModel) : 
+    id : int
     first_name : str
     last_name : str
 

@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, APIRouter, Depends, HTTPException
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 import os
-from .. import oauth2, models
+from .. import oauth2, models, utils
 from ..database import get_db
 from sqlalchemy.orm import Session
 from base64 import b64decode
@@ -40,6 +40,7 @@ async def upload_file(file: UploadFile = File(...), current_user = Depends(oauth
         # Remove the PKCS7 padding
         unpadder = padding.PKCS7(128).unpadder()
         unpadded_content = unpadder.update(decrypted_content) + unpadder.finalize()
+        print (utils.convert_size(len(encrypted_content_b64)))
 
         return Response(content=unpadded_content, media_type='application/octet-stream')
 

@@ -3,6 +3,8 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import secrets
+import math
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
 
@@ -29,3 +31,16 @@ def generate_aes_key(password):
     key = kdf.derive(password.encode())  # Utilisez le mot de passe fourni pour dériver la clé
 
     return key
+
+
+def convert_size(size_bytes):
+    """
+    Convertit la taille du fichier en une chaîne lisible par l'homme (B, KB, MB, GB, TB, PB)
+    """
+    if size_bytes == 0:
+        return "0 B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    p = math.pow(1024, i)
+    s = round(size_bytes / p, 2)
+    return "%s %s" % (s, size_name[i])

@@ -39,3 +39,5 @@ class Ufile (Base) :
     name = Column(String, nullable=False)
     size = Column(String, nullable=False)
     algorithm = Column(String, nullable=False)
+    upload_at = Column(TIMESTAMP(timezone=True),
+                    nullable=False, server_default=text('now()'))
