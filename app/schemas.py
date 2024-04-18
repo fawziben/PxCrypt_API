@@ -29,6 +29,12 @@ class UserLogin(BaseModel):
     email : EmailStr
     password : str
 
+class GetUFilesResponse (BaseModel) : 
+    id : int
+    upload_at : datetime
+    name : str
+    size : str
+    algorithm : str
 
 class Token(BaseModel) : 
     access_token : str

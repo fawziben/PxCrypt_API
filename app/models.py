@@ -21,23 +21,25 @@ class Sfile (Base) :
     __tablename__ = "sfiles"
 
     id = Column(Integer, primary_key=True, nullable=False)
-    id_sender = Column(Integer, ForeignKey('users.id'), nullable=False)
     id_receiver = Column(Integer,ForeignKey('users.id'), nullable=False)
     id_file = Column(Integer, ForeignKey('ufiles.id'), nullable=False)
     shared_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text('now()'))
     
-    sender = relationship("User", foreign_keys=[id_sender])
     receiver = relationship("User", foreign_keys=[id_receiver])
     file = relationship("Ufile", foreign_keys=[id_file])
 
-    
 class Ufile (Base) : 
     __tablename__ = "ufiles"
 
     id = Column(Integer, primary_key=True, nullable=False)
+    id_owner = Column(Integer,ForeignKey('users.id'), nullable=False)
     name = Column(String, nullable=False)
     size = Column(String, nullable=False)
     algorithm = Column(String, nullable=False)
     upload_at = Column(TIMESTAMP(timezone=True),
-                    nullable=False, server_default=text('now()'))
+                        nullable=False, server_default=text('now()'))
+    
+    owner = relationship("User", foreign_keys=[id_owner])
+
+    
