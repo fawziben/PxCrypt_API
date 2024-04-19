@@ -14,26 +14,25 @@ router = APIRouter(
     tags=['Files']
 )
 
-@router.post('/share', status_code=status.HTTP_200_OK)
-async def share_with(file: UploadFile = File(...), db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
-    encrypted_content_b64 = await file.read()
+@router.post('/share/{id}', status_code=status.HTTP_200_OK)
+async def share_file(id : int , users_list : list[int], db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+    try : 
+        print(users_list)
+        print(id)
 
-    # Créer le répertoire s'il n'existe pas
-    Path('test').mkdir(parents=True, exist_ok=True)
-
-    # Chemin complet du fichier
-    file_path = os.path.join('test', file.filename)
-
-    # Écrire le contenu du fichier dans le répertoire
-    with open(file_path, "wb") as f:
-        f.write(encrypted_content_b64)
-
-    return True
-
+    except HTTPException as e:
+        print(f"HTTPException: {e.status_code} - {e.detail}")
+        raise e
+    
 @router.post('/upload', status_code=status.HTTP_200_OK)
 async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
-    ufile = {}
     encrypted_content_b64 = await file.read()
+    existing_file = db.query(models.Ufile).filter(
+        models.Ufile.name == file.filename,
+        ).first()        
+        
+    if existing_file:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A file with this name has already been uploaded")    
 
     ufile = models.Ufile(
         name=file.filename,
