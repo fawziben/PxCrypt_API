@@ -17,29 +17,33 @@ class User (Base) :
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text('now()'))
     
-class Sfile (Base) : 
+class Sfile(Base):
     __tablename__ = "sfiles"
 
     id = Column(Integer, primary_key=True, nullable=False)
-    id_receiver = Column(Integer,ForeignKey('users.id'), nullable=False)
+    id_receiver = Column(Integer, ForeignKey('users.id'), nullable=False)
     id_file = Column(Integer, ForeignKey('ufiles.id'), nullable=False)
-    shared_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, server_default=text('now()'))
-    
+    shared_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+    # Relation Many-to-One avec la table Ufile
+    file = relationship("Ufile", back_populates="sfiles")
+
+    # Contraintes de clé étrangère
     receiver = relationship("User", foreign_keys=[id_receiver])
     file = relationship("Ufile", foreign_keys=[id_file])
+    
 
-class Ufile (Base) : 
+
+class Ufile(Base):
     __tablename__ = "ufiles"
 
     id = Column(Integer, primary_key=True, nullable=False)
-    id_owner = Column(Integer,ForeignKey('users.id'), nullable=False)
+    id_owner = Column(Integer, ForeignKey('users.id'), nullable=False)
     name = Column(String, nullable=False)
     size = Column(String, nullable=False)
     algorithm = Column(String, nullable=False)
-    upload_at = Column(TIMESTAMP(timezone=True),
-                        nullable=False, server_default=text('now()'))
-    
-    owner = relationship("User", foreign_keys=[id_owner])
+    upload_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
 
-    
+    # Relation One-to-Many avec la table Sfile avec cascade
+    sfiles = relationship("Sfile", back_populates="file", cascade="all, delete-orphan")
+    owner = relationship("User", foreign_keys=[id_owner])

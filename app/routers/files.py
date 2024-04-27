@@ -14,15 +14,22 @@ router = APIRouter(
     tags=['Files']
 )
 
-@router.post('/share/{id}', status_code=status.HTTP_200_OK)
-async def share_file(id : int , users_list : list[int], db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
-    try : 
-        print(users_list)
-        print(id)
+from app import models
 
-    except HTTPException as e:
-        print(f"HTTPException: {e.status_code} - {e.detail}")
-        raise e
+@router.post('/share/{id}', status_code=status.HTTP_200_OK)
+async def share_file(id: int, users_list: list[int], db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+    try:
+        for user_id in users_list:
+            new_sfile = models.Sfile(id_receiver=user_id, id_file=id)
+            db.add(new_sfile)
+        db.commit()
+        print("Files shared successfully")
+
+    except Exception as e:
+        print(f"Error while sharing files: {str(e)}")
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to share files")
+
     
 @router.post('/upload', status_code=status.HTTP_200_OK)
 async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
@@ -58,7 +65,28 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
 
 @router.get('/uploaded', status_code=status.HTTP_200_OK,response_model=list[schemas.GetUFilesResponse])
 def get_ufiles(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
-    files = db.query(models.Ufile).all()
+    files = db.query(models.Ufile).filter(models.Ufile.id_owner == current_user.id).all()
     if not files: 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No uploaded files found")
     return files
+
+
+@router.delete("/delete/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_file(id: int, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_user)):
+    try:
+        # Supprimer d'abord les enregistrements dans la table sfiles
+        db.query(models.Sfile).filter(models.Sfile.id_file == id).delete()
+
+        # Ensuite, supprimer l'enregistrement dans la table ufiles
+        file_query = db.query(models.Ufile).filter(models.Ufile.id == id)
+        if file_query.first() is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File with this ID does not exist")
+        file_query.delete()
+        
+        db.commit()
+        return {}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
