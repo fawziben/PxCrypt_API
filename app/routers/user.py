@@ -9,10 +9,9 @@ router = APIRouter(
     tags=['Users']
 )
 
-
 @router.get('/', status_code=status.HTTP_200_OK, response_model=list[schemas.GetUsersResponse])
 def get_users(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)): 
-    users = db.query(models.User).all()
+    users = db.query(models.User).filter(models.User.id != current_user.id).all()
     if not users: 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found")
     return users

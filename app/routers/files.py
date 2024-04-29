@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from .. import oauth2, models, utils, schemas
 from ..database import get_db
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from base64 import b64decode
 from cryptography.hazmat.primitives import padding
 
@@ -79,14 +79,29 @@ def delete_file(id: int, db: Session = Depends(get_db), current_user=Depends(oau
 
         # Ensuite, supprimer l'enregistrement dans la table ufiles
         file_query = db.query(models.Ufile).filter(models.Ufile.id == id)
-        if file_query.first() is None:
+        file = file_query.first()
+        if file is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File with this ID does not exist")
-        file_query.delete()
         
+        file_path = os.path.join(current_user.email, file.name)
+        print(file_path)
+        file_query.delete()
         db.commit()
+
+        if os.path.exists(file_path):
+            os.remove(file_path)
         return {}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@router.get('/shared', status_code=status.HTTP_200_OK,)
+def get_sfiles(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+    files = db.query(models.Sfile).join(models.Ufile).join(models.User).filter(models.Sfile.id_receiver == current_user.id).all()
+    if not files: 
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No shared files found")
+    # Mappez les résultats sur le modèle de réponse
+    response_data = [{"date":file.file.upload_at ,"name": file.file.name, "size": file.file.size, "algorithm": file.file.algorithm, "sender": file.file.owner.email} for file in files]
+    return response_data
 
 

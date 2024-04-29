@@ -21,6 +21,7 @@ class GetUsersResponse (BaseModel) :
     id : int
     first_name : str
     last_name : str
+    state : bool = False
 
 class UserGetResponse (UserPostResponse) :
     password : str
@@ -35,6 +36,13 @@ class GetUFilesResponse (BaseModel) :
     name : str
     size : str
     algorithm : str
+
+class GetSFilesResponse(BaseModel):
+    name: str
+    size: str
+    algorithm: str
+    email: str
+    shared_at: Optional[datetime] = None
 
 class Token(BaseModel) : 
     access_token : str
