@@ -84,7 +84,6 @@ def delete_file(id: int, db: Session = Depends(get_db), current_user=Depends(oau
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File with this ID does not exist")
         
         file_path = os.path.join(current_user.email, file.name)
-        print(file_path)
         file_query.delete()
         db.commit()
 
@@ -104,4 +103,24 @@ def get_sfiles(db: Session = Depends(get_db), current_user = Depends(oauth2.get_
     response_data = [{"date":file.file.upload_at ,"name": file.file.name, "size": file.file.size, "algorithm": file.file.algorithm, "sender": file.file.owner.email} for file in files]
     return response_data
 
+
+from fastapi.responses import FileResponse
+import os
+
+@router.get('/{id}', status_code=status.HTTP_200_OK,)
+def get_ufile_by_id(id : int , db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+    file = db.query(models.Ufile).filter(models.Ufile.id == id).first()
+    if not file: 
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This file does not exist in the database")
+    
+    # Construire le chemin complet du fichier
+    file_path = os.path.join(current_user.email, file.name)
+    
+    # Lire le contenu du fichier
+    with open(file_path, "rb") as f:
+        file_data = f.read()
+    
+    plain_data = utils.decrypt(file_data,current_user.private_key)
+    # Retourner les données du fichier dans la réponse
+    return Response(content=plain_data, media_type='application/octet-stream')
 
