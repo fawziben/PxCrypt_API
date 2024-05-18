@@ -24,10 +24,11 @@ class Sfile(Base):
     id_receiver = Column(Integer, ForeignKey('users.id'), nullable=False)
     id_file = Column(Integer, ForeignKey('ufiles.id'), nullable=False)
     shared_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    download = Column(Boolean, nullable=False)
+    message = Column(String, nullable=False)
 
     # Relation Many-to-One avec la table Ufile
     file = relationship("Ufile", back_populates="sfiles")
-
     # Contraintes de clé étrangère
     receiver = relationship("User", foreign_keys=[id_receiver])
     file = relationship("Ufile", foreign_keys=[id_file])
