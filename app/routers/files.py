@@ -14,13 +14,13 @@ router = APIRouter(
     tags=['Files']
 )
 
-from app import models
 
 @router.post('/share/{id}', status_code=status.HTTP_200_OK)
-async def share_file(id: int, users_list: list[int], db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+async def share_file(id: int, recipients: list[schemas.ShareRecipient], db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     try:
-        for user_id in users_list:
-            new_sfile = models.Sfile(id_receiver=user_id, id_file=id)
+        print(recipients)
+        for recipient in recipients:
+            new_sfile = models.Sfile(id_receiver=recipient.id, id_file=id,download=recipient.download,message=recipient.message)
             db.add(new_sfile)
         db.commit()
         print("Files shared successfully")
@@ -98,6 +98,7 @@ def delete_file(id: int, db: Session = Depends(get_db), current_user=Depends(oau
 @router.delete("/shared/delete/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_file(id: int, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_user)):
     try:
+        print(id)
         # Supprimer d'abord les enregistrements dans la table sfiles
         db.query(models.Sfile).filter(models.Sfile.id == id).delete()
         db.commit()

@@ -2,13 +2,27 @@ from fastapi import Response, status, HTTPException, Depends, APIRouter, FastAPI
 from time import time
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from . import database, models
+from . import database, models, schemas
 from sqlalchemy.orm import Session
-from .routers import user, auth, crypt, decrypt, files
+from .routers import user, auth, crypt, decrypt, files, groups
 from fastapi.middleware.cors import CORSMiddleware
+from psycopg2.extensions import adapt, register_adapter
 
 
 models.Base.metadata.create_all(bind=database.engine)
+
+# Créez un adaptateur pour le type GroupTitleUpdate
+def adapt_group_title_update(value):
+    return adapt(value.title.encode('utf-8'))
+
+def adapt_group_desc_update(value):
+    return adapt(value.description.encode('utf-8'))
+
+# Enregistrez l'adaptateur
+register_adapter(schemas.GroupTitleUpdate, adapt_group_title_update)
+
+register_adapter(schemas.GroupDescriptionUpdate, adapt_group_desc_update)
+
 
 
 app = FastAPI()
@@ -40,8 +54,7 @@ app.include_router(auth.router)
 app.include_router(crypt.router)
 app.include_router(decrypt.router)
 app.include_router(files.router)
-
-
+app.include_router(groups.router)
 
 
 @app.get('/')

@@ -1,0 +1,89 @@
+from fastapi import FastAPI, File, UploadFile, APIRouter, Depends, HTTPException, Response, status
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+import os
+from pathlib import Path
+from .. import oauth2, models, utils, schemas
+from ..database import get_db
+from sqlalchemy.orm import Session, joinedload
+from base64 import b64decode
+from cryptography.hazmat.primitives import padding
+
+router = APIRouter(
+    prefix="/groups",
+    tags=['Groups']
+)
+
+@router.get('/', status_code=status.HTTP_200_OK)
+def get_groups_by_user(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+    groups = db.query(models.Group).filter(models.Group.id_owner == current_user.id).all()
+    if not groups:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No sharing lists")
+
+    result = []
+    for group in groups:
+        user_groups = db.query(models.User, models.User_Group).join(models.User_Group, models.User.id == models.User_Group.id_user).filter(models.User_Group.id_group == group.id).all()
+        group_data = {
+            "id": group.id,
+            "title": group.title,
+            "description": group.description,
+            "users": [
+                {
+                    "id": user.id,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "email": user.email,
+                    "user_group": user_group.id
+                }
+                for user, user_group in user_groups
+            ]
+        }
+        result.append(group_data)
+
+    return result
+
+
+@router.delete('/user_group/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_user_from_group(id: int, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_user)):
+    try:
+        user_query = db.query(models.User_Group).filter(models.User_Group.id == id)
+        user = user_query.first()
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist or does not belong to the group")
+        
+        user_query.delete()
+        db.commit()
+        
+        return {}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.put('/update/title/{group_id}', status_code=status.HTTP_200_OK)
+def update_group_title(group_id: int, group_title: schemas.GroupTitleUpdate, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_user)):
+    try:
+        group = db.query(models.Group).filter(models.Group.id == group_id).first()
+        if not group:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+        group.title = group_title.title
+        db.commit()
+        return {"message": "Group title updated successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+@router.put('/update/description/{group_id}', status_code=status.HTTP_200_OK)
+def update_group_desc(group_id: int, group_description: schemas.GroupDescriptionUpdate, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_user)):
+    try:
+        group = db.query(models.Group).filter(models.Group.id == group_id).first()
+        if not group:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+        group.description = group_description.description
+        db.commit()
+        return {"message": "Group title updated successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+

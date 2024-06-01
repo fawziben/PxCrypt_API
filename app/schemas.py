@@ -50,3 +50,14 @@ class Token(BaseModel) :
 
 class TokenData (BaseModel) : 
     id : Optional [int] = None
+
+class ShareRecipient(BaseModel):
+    id: int
+    download: bool
+    message: str
+
+class GroupTitleUpdate(BaseModel):
+    title: str
+
+class GroupDescriptionUpdate(BaseModel):
+    description: str

@@ -48,3 +48,25 @@ class Ufile(Base):
     # Relation One-to-Many avec la table Sfile avec cascade
     sfiles = relationship("Sfile", back_populates="file", cascade="all, delete-orphan")
     owner = relationship("User", foreign_keys=[id_owner])
+
+class Group(Base) : 
+    __tablename__ = "groups"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    id_owner = Column(Integer, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+
+class User_Group (Base) : 
+    __tablename__ = "user_group"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
+    id_group = Column(Integer, ForeignKey('groups.id'), nullable=False)
+
+    user = relationship("User", foreign_keys=[id_user])
+    group = relationship("Group", foreign_keys=[id_group])
+
+    
+
+    
