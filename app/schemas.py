@@ -61,3 +61,7 @@ class GroupTitleUpdate(BaseModel):
 
 class GroupDescriptionUpdate(BaseModel):
     description: str
+
+class GroupInfo(BaseModel):
+    title : str
+    description: str

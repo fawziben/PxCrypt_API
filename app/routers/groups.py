@@ -85,5 +85,29 @@ def update_group_desc(group_id: int, group_description: schemas.GroupDescription
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
+    
+@router.post('/create', status_code=status.HTTP_200_OK)
+def add_group(group : schemas.GroupInfo,db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+    try:
+        existing_group = db.query(models.Group).filter(
+        models.Group.title == group.title,
+        models.Group.description == group.description,
+        ).first()        
+        
+        if existing_group:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
+        
+        n_group = {
+            "id_owner" : current_user.id,
+            "title" : group.title,
+            "description" : group.description
+        }
+        new_group = models.Group(**n_group)
+        db.add(new_group)
+        db.commit()
+        db.refresh(new_group)
+        return new_group
+    except HTTPException as e:
+        print(f"HTTPException: {e.status_code} - {e.detail}")
+        raise e
 
