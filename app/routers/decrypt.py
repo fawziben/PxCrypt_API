@@ -84,23 +84,19 @@ async def view_file_locally(file: UploadFile = File(...), current_user = Depends
         unpadded_content = unpadder.update(decrypted_content) + unpadder.finalize()
 
         # Determine the file extension
-        original_filename = file.filename
-        parts = original_filename.split('.')
-        if len(parts) > 1:
-            for part in parts[::-1]:
-                if part.lower() in mimetypes.types_map:
-                    file_extension = part.lower()
-                    break
-            else:
-                file_extension = 'octet-stream'
-        else:
-            file_extension = 'octet-stream'
+        ext = utils.get_true_extension(file.filename)
+        print(ext)
+        mime_types = {
+            '.pdf': 'application/pdf',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.txt': 'text/plain',
+        }
+        media_type = mime_types.get(ext, 'application/octet-stream')
 
-        # Get the correct MIME type based on the file extension
-        mime_type = mimetypes.types_map.get(f'.{file_extension}', 'application/octet-stream')
-
-        # Return the decrypted file content with the correct MIME type
-        return Response(content=unpadded_content, media_type=mime_type)
+        return Response(content=unpadded_content, media_type=media_type)
 
     except Exception as e:
         print("Error:", e)
