@@ -21,10 +21,18 @@ class GetUsersResponse (BaseModel) :
     id : int
     first_name : str
     last_name : str
+    email : EmailStr
     state : bool = False
 
 class UserGetResponse (UserPostResponse) :
     password : str
+
+class CurrentUserGetResponse (BaseModel) :
+    first_name : str
+    last_name : str
+    email : EmailStr
+    phone_number : str
+
 
 class UserLogin(BaseModel): 
     email : EmailStr
@@ -65,3 +73,10 @@ class GroupDescriptionUpdate(BaseModel):
 class GroupInfo(BaseModel):
     title : str
     description: str
+
+class UserUpdateName(BaseModel):
+    name: str
+
+
+class UserUpdateEmail(BaseModel):
+    email: EmailStr

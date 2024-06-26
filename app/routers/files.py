@@ -117,29 +117,40 @@ def get_sfiles(db: Session = Depends(get_db), current_user = Depends(oauth2.get_
     response_data = [{"date":file.file.upload_at ,"name": file.file.name, "size": file.file.size, "algorithm": file.file.algorithm, "sender": file.file.owner.email, "file_id" :file.file.id, "id" : file.id} for file in files]
     return response_data
 
-@router.get('/{id}', status_code=status.HTTP_200_OK,)
-def get_ufile_by_id(id : int , db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+@router.get('/{id}', status_code=status.HTTP_200_OK)
+def get_ufile_by_id(id: int, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     file = db.query(models.Ufile).filter(models.Ufile.id == id).first()
-    if not file: 
+    if not file:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This file does not exist in the database")
-    
+
     # Construire le chemin complet du fichier
-    if (file.id_owner != current_user.id) :
-            user = db.query(models.User).filter(models.User.id == file.id_owner).first() 
-            if not user : 
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="This file does not exist anymore")
-            pk = user.private_key
-            file_path = os.path.join(user.email, file.name)
-    else : 
+    if file.id_owner != current_user.id:
+        user = db.query(models.User).filter(models.User.id == file.id_owner).first()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This file does not exist anymore")
+        pk = user.private_key
+        file_path = os.path.join(user.email, file.name)
+    else:
         pk = current_user.private_key
         file_path = os.path.join(current_user.email, file.name)
 
-
     with open(file_path, "rb") as f:
         file_data = f.read()
-    
-    plain_data = utils.decrypt(file_data,pk)
-    # Retourner les données du fichier dans la réponse
-    return Response(content=plain_data, media_type='application/octet-stream')
+
+    plain_data = utils.decrypt(file_data, pk)
+
+    ext = utils.get_true_extension(file.name)
+    print(ext)
+    mime_types = {
+        '.pdf': 'application/pdf',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.txt': 'text/plain',
+    }
+    media_type = mime_types.get(ext, 'application/octet-stream')
+
+    return Response(content=plain_data, media_type=media_type)
 
 

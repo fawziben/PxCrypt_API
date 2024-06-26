@@ -8,6 +8,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from base64 import b64decode
 from cryptography.hazmat.primitives import padding
+import os
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
@@ -74,3 +75,10 @@ def decrypt (data,pk) :
     unpadder = padding.PKCS7(128).unpadder()
     unpadded_content = unpadder.update(decrypted_content) + unpadder.finalize()
     return unpadded_content
+
+def get_true_extension(file_name):
+    while '.' in file_name:
+        file_name, ext = os.path.splitext(file_name)
+        if ext.lower() in ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.txt']:
+            return ext.lower()
+    return None

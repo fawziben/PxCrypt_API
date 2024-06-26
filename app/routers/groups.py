@@ -106,8 +106,54 @@ def add_group(group : schemas.GroupInfo,db: Session = Depends(get_db), current_u
         db.add(new_group)
         db.commit()
         db.refresh(new_group)
-        return new_group
+        print(new_group.id)
+        return {"id" : new_group.id}
     except HTTPException as e:
         print(f"HTTPException: {e.status_code} - {e.detail}")
         raise e
 
+
+@router.delete("/delete/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_group(id: int, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_user)):
+    try:
+        # Supprimer d'abord les enregistrements dans la table sfiles
+        db.query(models.User_Group).filter(models.User_Group.id_group == id).delete()
+
+        # Ensuite, supprimer l'enregistrement dans la table ufiles
+        group_query = db.query(models.Group).filter(models.Group.id == id)
+        group = group_query.first()
+        if group is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This group does not exist")
+        
+        group_query.delete()
+        db.commit()
+
+        return {}
+    except Exception as e:
+        db.rollback()
+        print(e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+@router.post('/usersadd/{id}', status_code=status.HTTP_200_OK)
+def add_users_to_group(id: int, users: list[int], db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_user)):
+    try:
+        existing_group = db.query(models.Group).filter(
+            models.Group.id == id,
+        ).first()
+
+        if existing_group is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This group does not exist")
+        
+        new_user_ids = []  # Liste pour stocker les nouveaux identifiants d'utilisateur de groupe
+
+        for user in users:
+            new_user = models.User_Group(id_user=user, id_group=id)
+            db.add(new_user)
+            db.commit()
+            new_user_ids.append({'id' : new_user.id, 'id_user' : user})  # Ajouter l'ID du nouvel utilisateur de groupe à la liste
+            print("User added successfully")
+        print (new_user_ids[0])
+        return new_user_ids  # Retourner la liste des nouveaux identifiants d'utilisateur de groupe
+    except HTTPException as e:
+        print(f"HTTPException: {e.status_code} - {e.detail}")
+        raise e

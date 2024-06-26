@@ -46,6 +46,57 @@ def get_user(id: int, db: Session = Depends(get_db), current_user = Depends(oaut
 
     return user
 
+@router.get('/current/',status_code=status.HTTP_200_OK, response_model=schemas.CurrentUserGetResponse)
+def get_current_user(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)) : 
+    return current_user
+
+@router.put('/current/name/', status_code=status.HTTP_200_OK, response_model=schemas.CurrentUserGetResponse)
+def update_user_name(user_update: schemas.UserUpdateName, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_user)):
+    print(user_update.name)
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    user.first_name = user_update.name
+
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+@router.put('/current/lastname/', status_code=status.HTTP_200_OK, response_model=schemas.CurrentUserGetResponse)
+def update_user_name(user_update: schemas.UserUpdateName, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_user)):
+    print(user_update.name)
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    user.last_name = user_update.name
+
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+
+@router.put('/current/email/', status_code=status.HTTP_200_OK, response_model=schemas.CurrentUserGetResponse)
+def update_user_name(user_update: schemas.UserUpdateEmail, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_user)):
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    user.email = user_update.email
+
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+
+
 @router.put('/{id}',response_model=schemas.UserGetResponse)
 def update_user(id : int , user : schemas.UserCreate, db: Session = Depends(get_db)) : 
     user.password = utils.hash_pwd(user.password)
@@ -57,3 +108,4 @@ def update_user(id : int , user : schemas.UserCreate, db: Session = Depends(get_
     update_query.update(user.model_dump())
     db.commit()
     return update_query.first()
+
