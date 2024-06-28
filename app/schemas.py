@@ -32,6 +32,7 @@ class CurrentUserGetResponse (BaseModel) :
     last_name : str
     email : EmailStr
     phone_number : str
+    img_src : Optional[str] = None
 
 
 class UserLogin(BaseModel): 
@@ -80,3 +81,7 @@ class UserUpdateName(BaseModel):
 
 class UserUpdateEmail(BaseModel):
     email: EmailStr
+
+class PasswordReset(BaseModel):
+    old_password: str
+    new_password: str

@@ -16,6 +16,8 @@ class User (Base) :
     private_key = Column (String,server_default=None)
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text('now()'))
+    img_src = Column(String, nullable=True)  # Assurez-vous que cette colonne existe
+
     
 class Sfile(Base):
     __tablename__ = "sfiles"
