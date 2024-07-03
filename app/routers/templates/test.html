@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Verification Code</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        padding: 20px;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background-color: #007bff;
+        color: #ffffff;
+        padding: 10px;
+        text-align: center;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+      }
+      .content {
+        padding: 20px;
+      }
+      .footer {
+        background-color: #f0f0f0;
+        padding: 10px;
+        text-align: center;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>Email Verification Code</h2>
+      </div>
+      <div class="content">
+        <p>Dear User,</p>
+        <p>
+          Your verification code is: <strong>{{ verification_code }}</strong>
+        </p>
+        <p>Please use this code to verify your email address.</p>
+      </div>
+      <div class="footer">
+        <p>This email was sent from PxCrypt API.</p>
+      </div>
+    </div>
+  </body>
+</html>

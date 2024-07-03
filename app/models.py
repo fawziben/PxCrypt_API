@@ -17,6 +17,8 @@ class User (Base) :
     created_at = Column(TIMESTAMP(timezone=True),
                         nullable=False, server_default=text('now()'))
     img_src = Column(String, nullable=True)  # Assurez-vous que cette colonne existe
+    verification_code = Column(String,nullable=True)
+    code_expiry = Column(DateTime, nullable= True)
 
     
 class Sfile(Base):

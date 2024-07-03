@@ -153,4 +153,9 @@ def get_ufile_by_id(id: int, db: Session = Depends(get_db), current_user = Depen
 
     return Response(content=plain_data, media_type=media_type)
 
-
+@router.get('/stats/uploaded', status_code=status.HTTP_200_OK,response_model=list[schemas.GetUFilesStatsResponse])
+def get_ufiles(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+    files = db.query(models.Ufile).filter(models.Ufile.id_owner == current_user.id).all()
+    if not files: 
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No uploaded files found")
+    return files

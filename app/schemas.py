@@ -85,3 +85,10 @@ class UserUpdateEmail(BaseModel):
 class PasswordReset(BaseModel):
     old_password: str
     new_password: str
+
+class GetUFilesStatsResponse (BaseModel) : 
+    name : str
+
+class UserVerify (BaseModel) : 
+    email : EmailStr
+    code : str
