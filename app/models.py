@@ -19,6 +19,9 @@ class User (Base) :
     img_src = Column(String, nullable=True)  # Assurez-vous que cette colonne existe
     verification_code = Column(String,nullable=True)
     code_expiry = Column(DateTime, nullable= True)
+    TFA = Column (Boolean,nullable=False,default=True)
+    
+
 
     
 class Sfile(Base):

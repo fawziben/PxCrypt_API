@@ -33,34 +33,45 @@ conf = ConnectionConfig(
 
 def html(number) : 
     return f"""
-<h1>Thanks for using Fastapi-mail {number} </h1> 
+<h1> Votre code d'authentification est : {number} </h1> 
 """
 
 
 
-@router.post("/email",status_code=status.HTTP_200_OK)
+@router.post("/email")
 async def simple_send(user_credentials: schemas.UserLogin, db: Session = Depends(database.get_db)):
-
     user = db.query(models.User).filter(models.User.email == user_credentials.email).first()
     
     if not user or not utils.verify_pwd(user_credentials.password, user.password):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid credentials')
     
-        # Generate verification code
+    access_token = oauth2.create_access_token(data={"user_id": user.id})
+
+    if not user.TFA:
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content={
+                "detail": "Single Factor Authentication",
+                "access_token": access_token
+            }
+        )
+
+    # Generate verification code
     verification_code = generate_verification_code()
     user.verification_code = verification_code
     user.code_expiry = datetime.utcnow() + timedelta(minutes=10)  # Code valid for 10 minutes
     db.commit()
     
     message = MessageSchema(
-        subject="Fastapi-Mail module",
+        subject="OTP",
         recipients=[user.email],
         body=html(verification_code),
-        subtype=MessageType.html)
+        subtype=MessageType.html
+    )
 
     fm = FastMail(conf)
     await fm.send_message(message)
-    return {"message": "email has been sent"}  
+    return {"message": "email has been sent"}
 
 @router.post('/verify-code')
 def verify_code(user_credentials : schemas.UserVerify, db: Session = Depends(database.get_db)):
