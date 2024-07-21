@@ -22,7 +22,11 @@ class GetUsersResponse (BaseModel) :
     first_name : str
     last_name : str
     email : EmailStr
-    state : bool = False
+    phone_number : str
+    created_at : datetime
+    img_src : Optional[str] = None
+    state : bool 
+
 
 class UserGetResponse (UserPostResponse) :
     password : str
@@ -33,10 +37,15 @@ class CurrentUserGetResponse (BaseModel) :
     email : EmailStr
     phone_number : str
     img_src : Optional[str] = None
+    TFA : bool
 
 
 class UserLogin(BaseModel): 
     email : EmailStr
+    password : str
+
+class AdminLogin(BaseModel): 
+    username : str
     password : str
 
 class GetUFilesResponse (BaseModel) : 
@@ -78,6 +87,9 @@ class GroupInfo(BaseModel):
 class UserUpdateName(BaseModel):
     name: str
 
+class UserUpdateTFA(BaseModel):
+    TFA: bool
+
 
 class UserUpdateEmail(BaseModel):
     email: EmailStr
@@ -92,3 +104,8 @@ class GetUFilesStatsResponse (BaseModel) :
 class UserVerify (BaseModel) : 
     email : EmailStr
     code : str
+
+class FileCountsResponse(BaseModel):
+    user_files_count: int
+    received_files_count: int
+    shared_files_count: int

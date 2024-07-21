@@ -20,8 +20,7 @@ class User (Base) :
     verification_code = Column(String,nullable=True)
     code_expiry = Column(DateTime, nullable= True)
     TFA = Column (Boolean,nullable=False,default=True)
-    
-
+    state = Column (Boolean,nullable=False,default=True)
 
     
 class Sfile(Base):
@@ -75,5 +74,11 @@ class User_Group (Base) :
     group = relationship("Group", foreign_keys=[id_group])
 
     
+class Admin(Base) : 
+    __tablename__ = "admins"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    username = Column(String, nullable=False)
+    password = Column(String, nullable=False)
 
     

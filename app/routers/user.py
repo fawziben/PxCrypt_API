@@ -16,6 +16,15 @@ def get_users(db: Session = Depends(get_db), current_user = Depends(oauth2.get_c
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found")
     return users
 
+@router.get('/admin', status_code=status.HTTP_200_OK, response_model=list[schemas.GetUsersResponse])
+def get_users(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)): 
+    users = db.query(models.User).all()
+    if not users: 
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found")
+    
+    print(users[0].first_name)
+    return users
+
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserPostResponse)
 def create_user(user : schemas.UserCreate, db: Session = Depends(get_db)):
     try:
@@ -59,6 +68,25 @@ def update_user_name(user_update: schemas.UserUpdateName, db: Session = Depends(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     user.first_name = user_update.name
+
+    db.commit()
+    db.refresh(user)
+
+    return user
+
+@router.put('/current/TFA/', status_code=status.HTTP_200_OK, response_model=schemas.CurrentUserGetResponse)
+def update_TFA_state(user_update: schemas.UserUpdateName, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_user)):
+    print(user_update.name)
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    
+    # Vérifier si l'utilisateur existe et si l'ancien mot de passe est correct
+    if not user or not utils.verify_pwd(user_update.name, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Invalid credentials'
+        )
+    
+    user.TFA = not user.TFA
 
     db.commit()
     db.refresh(user)
@@ -109,3 +137,13 @@ def update_user(id : int , user : schemas.UserCreate, db: Session = Depends(get_
     db.commit()
     return update_query.first()
 
+@router.put('/block/{id}')
+def update_user(id : int , db: Session = Depends(get_db)) : 
+    user= db.query(models.User).filter(models.User.id == id).first()
+    if not user : 
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User with this index does not exist")
+    
+    user.state = not user.state
+    db.commit()
+    db.refresh(user)
+    return {}

@@ -45,6 +45,9 @@ async def simple_send(user_credentials: schemas.UserLogin, db: Session = Depends
     if not user or not utils.verify_pwd(user_credentials.password, user.password):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid credentials')
     
+    if not user.state :
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='account has been blocked')
+    
     access_token = oauth2.create_access_token(data={"user_id": user.id})
 
     if not user.TFA:
@@ -125,3 +128,15 @@ def reset_password(user_credentials: schemas.PasswordReset, db: Session = Depend
     # Créer un nouveau token d'accès
     access_token = oauth2.create_access_token(data={"user_id": user.id})
     return {}
+
+@router.post('/admin/login')
+def login(user_credentials: schemas.AdminLogin, db: Session = Depends(database.get_db)): 
+    user = db.query(models.Admin).filter(models.Admin.username == user_credentials.username).first()
+    print(user)
+    print(user_credentials)
+    
+    if not user or (user_credentials.password != user.password):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid credentials')
+    
+    access_token = oauth2.create_access_token(data={"user_id": user.id})    
+    return {"access_token": access_token}
