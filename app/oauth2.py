@@ -39,4 +39,12 @@ def get_current_user(token: str = Depends (oauth2_scheme), db : Session = Depend
     token_data = verify_access_token(token, credentials_exception)
     current_user = db.query(models.User).filter(models.User.id == token_data.id).first()
     return current_user
+
+def get_current_admin(token: str = Depends (oauth2_scheme), db : Session = Depends(database.get_db)) : 
+    credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="""Could not validate the credentials""", 
+                                          headers={"WWW:Authenticate" : "beare"})
+    
+    token_data = verify_access_token(token, credentials_exception)
+    current_user = db.query(models.Admin).filter(models.Admin.id == token_data.id).first()
+    return current_user
     

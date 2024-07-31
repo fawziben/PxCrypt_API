@@ -2,7 +2,8 @@ from fastapi import Response, status, HTTPException, Depends,APIRouter
 from .. import models,schemas,utils,oauth2
 from ..database import get_db
 from sqlalchemy.orm import Session
-
+import shutil
+import os
 
 router = APIRouter(
     prefix="/users",
@@ -11,6 +12,13 @@ router = APIRouter(
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model=list[schemas.GetUsersResponse])
 def get_users(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)): 
+    users = db.query(models.User).filter(models.User.id != current_user.id).all()
+    if not users: 
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found")
+    return users
+
+@router.get('/admin', status_code=status.HTTP_200_OK, response_model=list[schemas.GetUsersResponse])
+def get_users(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_admin)): 
     users = db.query(models.User).filter(models.User.id != current_user.id).all()
     if not users: 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users found")
@@ -147,3 +155,28 @@ def update_user(id : int , db: Session = Depends(get_db)) :
     db.commit()
     db.refresh(user)
     return {}
+
+
+@router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(id: int, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_admin)):
+    # Vérifiez si l'utilisateur existe
+    user = db.query(models.User).filter(models.User.id == id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Supprimer les références dans les autres tables
+    db.query(models.Admin_User_Group).filter(models.Admin_User_Group.id_user== id).delete()
+
+    # Supprimer les fichiers de l'utilisateur et le répertoire associé
+    user_files_directory = os.path.join(user.email)
+    if os.path.exists(user_files_directory):
+        shutil.rmtree(user_files_directory)
+
+    # Supprimer les entrées associées dans les tables ufiles et sfiles
+    db.query(models.Ufile).filter(models.Ufile.id_owner == id).delete()
+
+    # Supprimer l'utilisateur
+    db.delete(user)
+    db.commit()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

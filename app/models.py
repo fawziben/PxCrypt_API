@@ -28,17 +28,15 @@ class Sfile(Base):
 
     id = Column(Integer, primary_key=True, nullable=False)
     id_receiver = Column(Integer, ForeignKey('users.id'), nullable=False)
-    id_file = Column(Integer, ForeignKey('ufiles.id'), nullable=False)
+    id_file = Column(Integer, ForeignKey('ufiles.id', ondelete="CASCADE"), nullable=False)
     shared_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     download = Column(Boolean, nullable=False)
     message = Column(String, nullable=False)
 
     # Relation Many-to-One avec la table Ufile
     file = relationship("Ufile", back_populates="sfiles")
-    # Contraintes de clé étrangère
     receiver = relationship("User", foreign_keys=[id_receiver])
     file = relationship("Ufile", foreign_keys=[id_file])
-    
 
 
 class Ufile(Base):
@@ -63,6 +61,16 @@ class Group(Base) :
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
 
+
+class Admin_Group(Base) : 
+    __tablename__ = "admin_groups"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    id_admin = Column(Integer, nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+
+
 class User_Group (Base) : 
     __tablename__ = "user_group"
 
@@ -72,6 +80,17 @@ class User_Group (Base) :
 
     user = relationship("User", foreign_keys=[id_user])
     group = relationship("Group", foreign_keys=[id_group])
+
+class Admin_User_Group (Base) : 
+    __tablename__ = "admin_user_group"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    id_user = Column(Integer, ForeignKey('users.id'), nullable=False)
+    id_group = Column(Integer, ForeignKey('admin_groups.id'), nullable=False)
+
+    user = relationship("User", foreign_keys=[id_user])
+    group = relationship("Admin_Group", foreign_keys=[id_group])
+
 
     
 class Admin(Base) : 
