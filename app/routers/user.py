@@ -145,8 +145,9 @@ def update_user(id : int , user : schemas.UserCreate, db: Session = Depends(get_
     db.commit()
     return update_query.first()
 
-@router.put('/block/{id}')
-def update_user(id : int , db: Session = Depends(get_db)) : 
+
+@router.put('/block/{id}',status_code=status.HTTP_200_OK)
+def update_user(id : int , db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_admin)) : 
     user= db.query(models.User).filter(models.User.id == id).first()
     if not user : 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User with this index does not exist")

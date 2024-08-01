@@ -21,6 +21,8 @@ class User (Base) :
     code_expiry = Column(DateTime, nullable= True)
     TFA = Column (Boolean,nullable=False,default=True)
     state = Column (Boolean,nullable=False,default=True)
+    time_residency = Column(Integer, nullable=False, default=2)  # Durée en jours
+
 
     
 class Sfile(Base):
