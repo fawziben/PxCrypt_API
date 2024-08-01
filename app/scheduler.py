@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from .database import engine
 from . import models
 import os
-from pathlib import Path
+from pytz import utc
 
 # Créez une session de base de données
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -12,11 +12,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def delete_expired_files():
     db = SessionLocal()  # Créez une nouvelle session
     try:
-        now = datetime.utcnow()
+        now = datetime.utcnow().replace(tzinfo=utc)  # Heure actuelle en UTC
+
         users = db.query(models.User).all()
 
         for user in users:
-            # Assurez-vous que time_residency est en minutes
             retention_period = timedelta(minutes=user.time_residency)
             expiration_date = now - retention_period
 
@@ -25,15 +25,23 @@ def delete_expired_files():
                 models.Ufile.upload_at < expiration_date
             ).all()
 
+            expired_files_list = []
             for file in expired_files:
+                if file.upload_at.tzinfo is None:
+                    upload_at_utc = file.upload_at.replace(tzinfo=utc)
+                else:
+                    upload_at_utc = file.upload_at.astimezone(utc)
+                
+                if upload_at_utc < expiration_date:
+                    expired_files_list.append(file)
+
+            for file in expired_files_list:
                 file_path = os.path.join(user.email, file.name)
                 if os.path.exists(file_path):
                     os.remove(file_path)
                 db.delete(file)
 
-        
         db.commit()
-        print(f"Checked and deleted expired files for all users at {now}.")
     except Exception as e:
         print(f"Error while deleting expired files: {e}")
         db.rollback()
