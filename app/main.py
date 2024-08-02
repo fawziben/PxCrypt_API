@@ -8,11 +8,12 @@ from .routers import user, auth, crypt, decrypt, files, groups, stats
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg2.extensions import adapt, register_adapter
 from .scheduler import start_scheduler  # Importer le scheduler
+from fastapi.staticfiles import StaticFiles
 
 models.Base.metadata.create_all(bind=database.engine)
 
-start_scheduler()
 
+start_scheduler()
 
 # Créez un adaptateur pour le type GroupTitleUpdate
 def adapt_group_title_update(value):
@@ -26,6 +27,7 @@ register_adapter(schemas.GroupTitleUpdate, adapt_group_title_update)
 register_adapter(schemas.GroupDescriptionUpdate, adapt_group_desc_update)
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="app/routers"), name="static")
 
 # Configurer les en-têtes CORS
 app.add_middleware(

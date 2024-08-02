@@ -4,6 +4,9 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 
+DEFAULT_STORAGE_BITS = 100 * 1024 * 1024 * 8
+
+
 class User (Base) : 
     __tablename__ = "users"
 
@@ -22,6 +25,7 @@ class User (Base) :
     TFA = Column (Boolean,nullable=False,default=True)
     state = Column (Boolean,nullable=False,default=True)
     time_residency = Column(Integer, nullable=False, default=7)  # Durée en jours
+    storage = Column (Integer, nullable=False, server_default=str(DEFAULT_STORAGE_BITS))
 
 
     

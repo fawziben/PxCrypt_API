@@ -25,7 +25,9 @@ class GetUsersResponse (BaseModel) :
     phone_number : str
     created_at : datetime
     img_src : Optional[str] = None
-    state : bool 
+    state : bool
+    time_residency : int
+    storage : int
 
 
 class UserGetResponse (UserPostResponse) :
