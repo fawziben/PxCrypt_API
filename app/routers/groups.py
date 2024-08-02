@@ -55,6 +55,7 @@ def get_groups_by_user(db: Session = Depends(get_db), current_user = Depends(oau
             "id": group.id,
             "title": group.title,
             "description": group.description,
+            "time_residency" : group.time_residency,
             "users": [
                 {
                     "id": user.id,
@@ -312,3 +313,31 @@ def get_groups_by_user(db: Session = Depends(get_db), current_user = Depends(oau
 
 
     return result
+
+
+@router.put('/admin/update/time_residency/{group_id}', status_code=status.HTTP_200_OK)
+def update_time_residency(group_id: int, update: schemas.TimeResidencyUpdate, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_admin)):
+    try:
+        time_residency = update.time_residency
+        print(time_residency)
+
+        # Mettre à jour le time_residency pour le groupe d'administrateurs
+        group = db.query(models.Admin_Group).filter(models.Admin_Group.id == group_id).first()
+        if not group:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+
+        group.time_residency = time_residency
+        db.commit()
+
+        # Mettre à jour le time_residency pour tous les utilisateurs du groupe
+        user_groups = db.query(models.Admin_User_Group).filter(models.Admin_User_Group.id_group == group_id).all()
+        for user_group in user_groups:
+            user = db.query(models.User).filter(models.User.id == user_group.id_user).first()
+            if user:
+                user.time_residency = time_residency
+        db.commit()
+
+        return {"message": "Group and associated users' time residency updated successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

@@ -21,7 +21,7 @@ class User (Base) :
     code_expiry = Column(DateTime, nullable= True)
     TFA = Column (Boolean,nullable=False,default=True)
     state = Column (Boolean,nullable=False,default=True)
-    time_residency = Column(Integer, nullable=False, default=2)  # Durée en jours
+    time_residency = Column(Integer, nullable=False, default=7)  # Durée en jours
 
 
     
@@ -71,6 +71,8 @@ class Admin_Group(Base) :
     id_admin = Column(Integer, nullable=False)
     title = Column(String, nullable=False)
     description = Column(String, nullable=False)
+    time_residency = Column(Integer, nullable=False, default=7)  # Durée en jours
+
 
 
 class User_Group (Base) : 

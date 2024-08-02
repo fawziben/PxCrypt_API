@@ -109,3 +109,6 @@ class FileCountsResponse(BaseModel):
     user_files_count: int
     received_files_count: int
     shared_files_count: int
+
+class TimeResidencyUpdate(BaseModel):
+    time_residency: int
