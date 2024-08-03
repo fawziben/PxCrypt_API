@@ -96,6 +96,9 @@ class UserUpdateTFA(BaseModel):
 class UserUpdateEmail(BaseModel):
     email: EmailStr
 
+class UpdateStorage(BaseModel):
+    storage: int
+
 class PasswordReset(BaseModel):
     old_password: str
     new_password: str
@@ -111,6 +114,7 @@ class FileCountsResponse(BaseModel):
     user_files_count: int
     received_files_count: int
     shared_files_count: int
+    total_uploaded_size : int
 
 class TimeResidencyUpdate(BaseModel):
     time_residency: int

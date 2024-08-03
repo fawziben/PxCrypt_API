@@ -17,7 +17,7 @@ def delete_expired_files():
         users = db.query(models.User).all()
 
         for user in users:
-            retention_period = timedelta(minutes=user.time_residency)
+            retention_period = timedelta(days=user.time_residency)
             expiration_date = now - retention_period
 
             expired_files = db.query(models.Ufile).filter(
@@ -50,6 +50,6 @@ def delete_expired_files():
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(delete_expired_files, 'interval', minutes=2, id='delete_expired_files', replace_existing=True)
+    scheduler.add_job(delete_expired_files, 'interval', days=1, id='delete_expired_files', replace_existing=True)
     scheduler.start()
     print("Scheduler started, job will run every 2 minutes.")

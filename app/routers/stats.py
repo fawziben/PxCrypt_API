@@ -2,6 +2,8 @@ from fastapi import Response, status, HTTPException, Depends,APIRouter
 from .. import models,schemas,utils,oauth2
 from ..database import get_db
 from sqlalchemy.orm import Session
+from sqlalchemy import func  # Importer func de SQLAlchemy pour les fonctions d'agrégation
+from sqlalchemy import cast, Integer
 
 
 router = APIRouter(
@@ -43,6 +45,8 @@ def get_file_count(id: int, db: Session = Depends(get_db), current_user: models.
 
 
 
+
+
 @router.get('/file-counts/{id}', status_code=status.HTTP_200_OK, response_model=schemas.FileCountsResponse)
 def get_file_counts(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user)):
     # Vérifiez si l'utilisateur existe
@@ -62,11 +66,19 @@ def get_file_counts(id: int, db: Session = Depends(get_db), current_user: models
         .filter(models.Ufile.id_owner == id) \
         .count()
 
+    # Calculez la taille totale des fichiers uploadés par l'utilisateur (en octets)
+    total_uploaded_size = db.query(func.sum(cast(models.Ufile.size, Integer))) \
+        .filter(models.Ufile.id_owner == id) \
+        .scalar() or 0  # Utiliser 0 comme valeur par défaut si aucun fichier n'est trouvé
+
+    print(total_uploaded_size)
     return {
         'user_files_count': user_files_count,
         'received_files_count': received_files_count,
-        'shared_files_count': shared_files_count
+        'shared_files_count': shared_files_count,
+        'total_uploaded_size': total_uploaded_size  # Ajouter la taille totale des fichiers uploadés
     }
+
 
 
 

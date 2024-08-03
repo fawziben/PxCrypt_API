@@ -157,6 +157,17 @@ def update_user(id : int , db: Session = Depends(get_db), current_user = Depends
     db.refresh(user)
     return {}
 
+@router.put('/admin/update/storage/{id}',status_code=status.HTTP_200_OK)
+def update_user(id : int , storage: schemas.UpdateStorage,  db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_admin)) : 
+    user= db.query(models.User).filter(models.User.id == id).first()
+    if not user : 
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User with this index does not exist")
+    
+    user.storage = storage.storage
+    db.commit()
+    db.refresh(user)
+    return {}
+
 
 @router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(id: int, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_admin)):
