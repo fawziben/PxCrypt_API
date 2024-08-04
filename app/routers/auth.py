@@ -11,7 +11,6 @@ from pathlib import Path
 from starlette.responses import JSONResponse
 from typing import List
 
-
 router = APIRouter(tags=['Authentication'])
 
 def generate_verification_code():
@@ -55,7 +54,8 @@ async def simple_send(user_credentials: schemas.UserLogin, db: Session = Depends
             status_code=status.HTTP_202_ACCEPTED,
             content={
                 "detail": "Single Factor Authentication",
-                "access_token": access_token
+                "access_token": access_token,
+                "user_id" : user.id
             }
         )
 
@@ -93,8 +93,8 @@ def verify_code(user_credentials : schemas.UserVerify, db: Session = Depends(dat
 
     # Generate access token
     access_token = oauth2.create_access_token(data={"user_id": user.id})
-
-    return {"access_token": access_token}
+    print (user.id)
+    return {"access_token": access_token,  "user_id" : user.id}
 
 @router.post('/login')
 def login(user_credentials: schemas.UserLogin, db: Session = Depends(database.get_db)): 

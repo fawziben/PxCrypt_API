@@ -27,7 +27,7 @@ register_adapter(schemas.GroupTitleUpdate, adapt_group_title_update)
 register_adapter(schemas.GroupDescriptionUpdate, adapt_group_desc_update)
 
 app = FastAPI()
-app.mount("/static", StaticFiles(directory="app/routers"), name="static")
+app.mount("/static", StaticFiles(directory="app/images"), name="static")
 
 # Configurer les en-têtes CORS
 app.add_middleware(

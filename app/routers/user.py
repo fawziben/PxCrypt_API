@@ -1,9 +1,10 @@
-from fastapi import Response, status, HTTPException, Depends,APIRouter
+from fastapi import Response, status, HTTPException, Depends,APIRouter, UploadFile, File, Body
 from .. import models,schemas,utils,oauth2
 from ..database import get_db
 from sqlalchemy.orm import Session
 import shutil
 import os
+import base64
 
 router = APIRouter(
     prefix="/users",
@@ -128,6 +129,59 @@ def update_user_name(user_update: schemas.UserUpdateEmail, db: Session = Depends
 
     db.commit()
     db.refresh(user)
+
+    return user
+
+
+import base64
+
+def add_padding(base64_string):
+    missing_padding = len(base64_string) % 4
+    if missing_padding:
+        base64_string += '=' * (4 - missing_padding)
+    return base64_string
+
+@router.put('/current/image/', status_code=status.HTTP_200_OK, response_model=schemas.CurrentUserGetResponse)
+def update_user_image(
+    image_data: str = Body(...),
+    db: Session = Depends(get_db),
+    current_user=Depends(oauth2.get_current_user)
+):
+    if not image_data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No image data provided")
+
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Decode the Base64 string
+    try:
+        header, encoded = image_data.split(",", 1)  # Assumes the Base64 string is in a data URL format
+        encoded = add_padding(encoded)  # Add padding if necessary
+        image_bytes = base64.b64decode(encoded)
+        print("Decoded image bytes:", len(image_bytes))
+    except Exception as e:
+        print("Error decoding Base64 string:", e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid Base64 string")
+
+    # Determine file location
+    file_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'images'))
+    file_location = os.path.join(file_dir, f"{current_user.id}_profile_image.png")
+    file_url = f"http://127.0.0.1:8000/static/{current_user.id}_profile_image.png"
+    
+    try:
+        os.makedirs(file_dir, exist_ok=True)  # Ensure directory exists
+        with open(file_location, "wb") as buffer:
+            buffer.write(image_bytes)
+        print("File saved successfully at:", file_location)
+    except Exception as e:
+        print("Error saving file:", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="File save error")
+
+    user.img_src = file_url
+    db.commit()
+    db.refresh(user)
+    print("User image path updated in DB:", user.img_src)
 
     return user
 
