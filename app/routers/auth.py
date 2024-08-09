@@ -140,3 +140,50 @@ def login(user_credentials: schemas.AdminLogin, db: Session = Depends(database.g
     
     access_token = oauth2.create_access_token(data={"user_id": user.id})    
     return {"access_token": access_token}
+
+
+
+@router.post("/admin/email")
+async def simple_send(user_credentials: schemas.AdminLogin, db: Session = Depends(database.get_db)):
+    admin = db.query(models.Admin).filter(models.Admin.username == user_credentials.username).first()
+    
+    if not admin or not (user_credentials.password == admin.password):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid credentials')
+    
+    # Generate verification code
+    verification_code = generate_verification_code()
+    admin.verification_code = verification_code
+    admin.code_expiry = datetime.utcnow() + timedelta(minutes=10)  # Code valid for 10 minutes
+    db.commit()
+    
+    message = MessageSchema(
+        subject="OTP",
+        recipients=[admin.username],
+        body=html(verification_code),
+        subtype=MessageType.html
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
+    return {"message": "email has been sent"}
+
+
+@router.post('/admin/verify-code')
+def verify_code(user_credentials : schemas.UserVerify, db: Session = Depends(database.get_db)):
+    admin = db.query(models.Admin).filter(models.Admin.username == user_credentials.email).first()
+
+    if not admin or admin.verification_code != user_credentials.code or admin.code_expiry < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Invalid or expired verification code'
+        )
+
+    # Clear verification code after successful verification
+    admin.verification_code = None
+    admin.code_expiry = None
+    db.commit()
+
+    # Generate access token
+    access_token = oauth2.create_access_token(data={"user_id": admin.id})
+    print (admin.id)
+    return {"access_token": access_token,  "user_id" : admin.id}

@@ -30,7 +30,62 @@ async def share_file(id: int, recipients: list[schemas.ShareRecipient], db: Sess
         db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to share files")
 
-    
+
+from sqlalchemy.orm import joinedload
+
+from sqlalchemy.orm import joinedload
+
+@router.post('/group_share/{id}', status_code=status.HTTP_200_OK)
+async def share_file(
+    id: int,
+    recipients: list[schemas.ShareRecipient],
+    db: Session = Depends(get_db),
+    current_user = Depends(oauth2.get_current_user)
+):
+    try:
+        user_ids = set()
+        new_files = []
+
+        for recipient in recipients:
+            group_id = recipient.id
+            download = recipient.download
+            message = recipient.message
+
+            # Récupérer les utilisateurs du groupe
+            group_users = db.query(models.User_Group).filter(
+                models.User_Group.id_group == group_id
+            ).options(joinedload(models.User_Group.user)).all()
+
+            if not group_users:
+                print(f"Group with id {group_id} does not exist or has no users.")
+                continue
+
+            for group_user in group_users:
+                user_id = group_user.id_user
+                
+                # Vérifier si l'utilisateur existe dans la table users
+                user_exists = db.query(models.User).filter(models.User.id == user_id).first()
+                
+                if user_exists:
+                    if user_id not in user_ids:
+                        user_ids.add(user_id)
+                        new_sfile = models.Sfile(id_receiver=user_id, id_file=id, download=download, message=message)
+                        new_files.append(new_sfile)
+                else:
+                    print(f"User ID {user_id} does not exist in users table.")
+
+        if new_files:
+            # Ajouter les nouvelles entrées dans la base de données
+            db.bulk_save_objects(new_files)
+            db.commit()
+
+        print("Files shared successfully")
+
+    except Exception as e:
+        print(f"Error while sharing files: {str(e)}")
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to share files")
+
 @router.post('/upload', status_code=status.HTTP_200_OK)
 async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     encrypted_content_b64 = await file.read()

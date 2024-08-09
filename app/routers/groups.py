@@ -33,7 +33,8 @@ def get_groups_by_user(db: Session = Depends(get_db), current_user = Depends(oau
                     "first_name": user.first_name,
                     "last_name": user.last_name,
                     "email": user.email,
-                    "user_group": user_group.id
+                    "user_group": user_group.id,
+                    "img_src" : user.img_src
                 }
                 for user, user_group in user_groups
             ]
