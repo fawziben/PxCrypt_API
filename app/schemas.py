@@ -118,3 +118,19 @@ class FileCountsResponse(BaseModel):
 
 class TimeResidencyUpdate(BaseModel):
     time_residency: int
+
+class UserUpdate(BaseModel):
+    firstName: str = None
+    lastName: str = None
+    email: EmailStr = None
+    phoneNumber: str = None
+    time_residency: int = None
+    password : str = None
+
+class UserStorageResponse(BaseModel):
+    name: str
+    storage_used: float 
+
+class FileExtensionCountResponse(BaseModel):
+    extension: str
+    count: int

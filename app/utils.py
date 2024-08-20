@@ -6,7 +6,7 @@ import secrets
 import math
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from cryptography.hazmat.primitives import padding
 import os
 
@@ -82,3 +82,27 @@ def get_true_extension(file_name):
         if ext.lower() in ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.txt']:
             return ext.lower()
     return None
+
+def encrypt_data(data,pk) : 
+        private_key_hex = bytes.fromhex(pk[2:])  # Ignorer le préfixe '\x'
+
+        # Générer un vecteur d'initialisation aléatoire
+        iv = os.urandom(16)
+
+        # Initialiser le chiffrement AES avec la clé et le mode CBC
+        cipher = Cipher(algorithms.AES(private_key_hex), modes.CBC(iv), backend=default_backend())
+        encryptor = cipher.encryptor()
+
+        # Créer un padder PKCS7
+        padder = padding.PKCS7(128).padder()
+
+        # Ajouter le bourrage PKCS7
+        padded_content = padder.update(data) + padder.finalize()
+
+        # Chiffrer le contenu
+        encrypted_content = iv + encryptor.update(padded_content) + encryptor.finalize()
+
+        # Convertir les données chiffrées en base64 pour la transmission
+        encrypted_content_b64 = b64encode(encrypted_content)
+
+        return encrypted_content_b64

@@ -4,7 +4,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from . import database, models, schemas
 from sqlalchemy.orm import Session
-from .routers import user, auth, crypt, decrypt, files, groups, stats
+from .routers import user, auth, crypt, decrypt, files, groups, stats, admin
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg2.extensions import adapt, register_adapter
 from .scheduler import start_scheduler  # Importer le scheduler
@@ -61,6 +61,8 @@ app.include_router(decrypt.router)
 app.include_router(files.router)
 app.include_router(groups.router)
 app.include_router(stats.router)
+app.include_router(admin.router)
+
 
 @app.get('/')
 def get_users(db: Session = Depends(database.get_db)):

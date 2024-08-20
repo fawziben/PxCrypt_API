@@ -133,7 +133,6 @@ def update_user_name(user_update: schemas.UserUpdateEmail, db: Session = Depends
     return user
 
 
-import base64
 
 def add_padding(base64_string):
     missing_padding = len(base64_string) % 4
@@ -231,15 +230,15 @@ def delete_user(id: int, db: Session = Depends(get_db), current_user = Depends(o
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     # Supprimer les références dans les autres tables
-    db.query(models.Admin_User_Group).filter(models.Admin_User_Group.id_user== id).delete()
+    db.query(models.Admin_User_Group).filter(models.Admin_User_Group.id_user == id).delete()
+    db.query(models.User_Group).filter(models.User_Group.id_user == id).delete()
+    db.query(models.Ufile).filter(models.Ufile.id_owner == id).delete()
+    db.query(models.Sfile).filter(models.Sfile.id_receiver == id).delete()  # Assurez-vous que la table et la colonne sont correctes
 
     # Supprimer les fichiers de l'utilisateur et le répertoire associé
     user_files_directory = os.path.join(user.email)
     if os.path.exists(user_files_directory):
         shutil.rmtree(user_files_directory)
-
-    # Supprimer les entrées associées dans les tables ufiles et sfiles
-    db.query(models.Ufile).filter(models.Ufile.id_owner == id).delete()
 
     # Supprimer l'utilisateur
     db.delete(user)
