@@ -112,7 +112,7 @@ def get_server_stats(db: Session = Depends(get_db), current_admin=Depends(oauth2
 
 
 @router.get("/user_storage", response_model=list[schemas.UserStorageResponse])
-async def get_user_storage(db: Session = Depends(get_db)):
+async def get_user_storage(db: Session = Depends(get_db), current_admin=Depends(oauth2.get_current_admin)):
     # Récupérer les utilisateurs avec la quantité de stockage utilisée
     users = db.query(models.User).all()
     
@@ -129,7 +129,7 @@ async def get_user_storage(db: Session = Depends(get_db)):
     return user_storage_list
 
 @router.get("/file_extensions", response_model=list[schemas.FileExtensionCountResponse])
-async def get_file_extensions(db: Session = Depends(get_db)):
+async def get_file_extensions(db: Session = Depends(get_db),  current_admin=Depends(oauth2.get_current_admin)):
     # Exécuter une requête pour récupérer les noms des fichiers
     query = text("""
         SELECT name FROM ufiles

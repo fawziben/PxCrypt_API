@@ -134,3 +134,27 @@ class UserStorageResponse(BaseModel):
 class FileExtensionCountResponse(BaseModel):
     extension: str
     count: int
+
+class PasswordRotationUpdate(BaseModel):
+    value : Optional[int] 
+
+
+class AddExtensionSchema(BaseModel):
+    ext : str 
+
+class AddDomainSchema(BaseModel):
+    domain: str
+
+class ExtensionResponse(BaseModel):
+    id: int
+    extension: str
+
+class DomainResponse(BaseModel):
+    id: int
+    domain: str
+
+class AdminParametersResponse(BaseModel):
+    pwd_rotation: str
+    login_attempt: str
+    extensions: list[ExtensionResponse]
+    domains: list[DomainResponse]

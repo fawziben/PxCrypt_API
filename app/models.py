@@ -26,6 +26,7 @@ class User (Base) :
     state = Column (Boolean,nullable=False,default=True)
     time_residency = Column(Integer, nullable=False, default=7)  # Durée en jours
     storage = Column (Integer, nullable=False, server_default=str(DEFAULT_STORAGE_BYTES))
+    attempts = Column (Integer, nullable=False, default=0)
 
 
     
@@ -111,3 +112,22 @@ class Admin(Base) :
     code_expiry = Column(DateTime, nullable= True)
 
     
+class Admin_Parameter(Base) : 
+    __tablename__ = "admin_parameters"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    pwd_rotation = Column(String, nullable=True)
+    login_attempt = Column(String, nullable=True)
+
+
+class Extension(Base) : 
+    __tablename__ = "extensions"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    extension = Column(String, nullable=False)
+
+class Domain(Base) : 
+    __tablename__ = "domains"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    domain = Column(String, nullable=False)
