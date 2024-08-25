@@ -57,6 +57,14 @@ def add_extension(extension: schemas.AddExtensionSchema, db: Session = Depends(g
 
     return {"detail": "Extension added successfully", "extension": new_extension.extension}
 
+@router.delete('/extension', status_code=status.HTTP_200_OK)
+def delete_extension_by_name(extension: schemas.DeleteExtensionSchema, db: Session = Depends(get_db), current_admin: int = Depends(oauth2.get_current_admin)):
+    extension_to_delete = db.query(models.Extension).filter(models.Extension.extension == extension.ext).first()
+    if not extension_to_delete:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Extension not found.")
+    db.delete(extension_to_delete)
+    db.commit()
+    return {"detail": "Extension deleted successfully"}
 
 
 @router.post('/domain', status_code=status.HTTP_200_OK)
@@ -75,6 +83,50 @@ def add_domain(domain: schemas.AddDomainSchema, db: Session = Depends(get_db), c
     db.refresh(new_domain)
 
     return {"detail": "Domain added successfully", "domain": new_domain.domain}
+
+@router.delete('/domain', status_code=status.HTTP_200_OK)
+def delete_domain_by_name(domain: schemas.DeleteDomainSchema, db: Session = Depends(get_db), current_admin: int = Depends(oauth2.get_current_admin)):
+    domain_to_delete = db.query(models.Domain).filter(models.Domain.domain == domain.domain).first()
+    if not domain_to_delete:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Domain not found.")
+    db.delete(domain_to_delete)
+    db.commit()
+    return {"detail": "Domain deleted successfully"}
+
+
+@router.put("/all_domains")
+def update_all_domains_state(db: Session = Depends(get_db),current_admin: int = Depends(oauth2.get_current_admin)):
+    try:
+        # Récupérer l'enregistrement unique dans Admin_Parameter
+        param = db.query(models.Admin_Parameter).first()
+        if not param:
+            raise HTTPException(status_code=404, detail="Admin parameters not found")
+
+        # Mettre à jour l'état de all_domains
+        param.all_domains = not param.all_domains
+        db.commit()
+        db.refresh(param)
+        return {"message": "all_domains state updated successfully", "all_domains": param.all_domains}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Fonction pour modifier l'état de all_extensions
+@router.put("/all_extensions")
+def update_all_extensions_state(db: Session = Depends(get_db), current_admin: int = Depends(oauth2.get_current_admin)):
+    try:
+        # Récupérer l'enregistrement unique dans Admin_Parameter
+        param = db.query(models.Admin_Parameter).first()
+        print (param)
+        if not param:
+            raise HTTPException(status_code=404, detail="Admin parameters not found")
+
+        # Mettre à jour l'état de all_extensions
+        param.all_extensions = not param.all_extensions
+        db.commit()
+        db.refresh(param)
+        return {"message": "all_extensions state updated successfully", "all_extensions": param.all_extensions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get('/', response_model=schemas.AdminParametersResponse, status_code=status.HTTP_200_OK)
 def get_settings(db: Session = Depends(get_db), current_admin: int = Depends(oauth2.get_current_admin)):
@@ -95,6 +147,8 @@ def get_settings(db: Session = Depends(get_db), current_admin: int = Depends(oau
     response = schemas.AdminParametersResponse(
         pwd_rotation=admin_parameters.pwd_rotation,
         login_attempt=admin_parameters.login_attempt,
+        all_extensions=admin_parameters.all_extensions,
+        all_domains=admin_parameters.all_domains,
         extensions=extension_list,
         domains=domain_list
     )

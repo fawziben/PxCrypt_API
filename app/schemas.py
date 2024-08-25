@@ -156,5 +156,13 @@ class DomainResponse(BaseModel):
 class AdminParametersResponse(BaseModel):
     pwd_rotation: str
     login_attempt: str
+    all_extensions : bool
+    all_domains : bool
     extensions: list[ExtensionResponse]
     domains: list[DomainResponse]
+
+class DeleteExtensionSchema(BaseModel):
+    ext: str
+
+class DeleteDomainSchema(BaseModel):
+    domain: str
