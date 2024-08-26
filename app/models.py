@@ -116,12 +116,12 @@ class Admin_Parameter(Base):
     __tablename__ = "admin_parameters"
 
     id = Column(Integer, primary_key=True, nullable=False)
-    pwd_rotation = Column(String, nullable=True)
-    login_attempt = Column(String, nullable=True)
+    pwd_rotation = Column(String, nullable=True,default=3)
+    login_attempt = Column(String, nullable=True,default=5)
     all_domains = Column(Boolean, default=True)  # Nouvelle colonne
     all_extensions = Column(Boolean, default=True)  # Nouvelle colonne
     verification_code = Column(String, nullable=True)  # Nouvelle colonne
-    code_expiry = Column(Integer, nullable=True)  # Nouvelle colonne
+    code_expiry = Column(DateTime, nullable=True)  # Changement de type vers DateTime
 
 
 class Extension(Base) : 

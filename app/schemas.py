@@ -2,13 +2,18 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
 
-class UserCreate (BaseModel) :
-    first_name : str
-    last_name : str
-    email : EmailStr
-    phone_number : str
-    password : str
+
+class UserDetails(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone_number: str
+    password: str
     private_key: Optional[str] = None
+
+class UserCreate (BaseModel) :
+    user : UserDetails
+    code : Optional [str] = None
 
 class UserPostResponse (BaseModel) :
     id : int
@@ -166,3 +171,7 @@ class DeleteExtensionSchema(BaseModel):
 
 class DeleteDomainSchema(BaseModel):
     domain: str
+
+class UserEmailVerify(BaseModel):
+    email: str
+    phone_number : str

@@ -13,30 +13,6 @@ from typing import List
 
 router = APIRouter(tags=['Authentication'])
 
-def generate_verification_code():
-    return secrets.token_hex(3)  # Générer un code de vérification
-
-
-conf = ConnectionConfig(
-    MAIL_USERNAME ="benmoumenfawzi@gmail.com",
-    MAIL_PASSWORD = "sxrm ddul wqxa btae",
-    MAIL_FROM = "benmoumenfawzi@gmail.com",
-    MAIL_PORT = 465,
-    MAIL_SERVER = "smtp.gmail.com",
-    MAIL_STARTTLS = False,
-    MAIL_SSL_TLS = True,
-    USE_CREDENTIALS = True,
-    VALIDATE_CERTS = True
-)
-
-
-def html(number) : 
-    return f"""
-<h1> Votre code d'authentification est : {number} </h1> 
-"""
-
-
-
 @router.post("/email")
 async def simple_send(user_credentials: schemas.UserLogin, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == user_credentials.email).first()
@@ -60,20 +36,11 @@ async def simple_send(user_credentials: schemas.UserLogin, db: Session = Depends
         )
 
     # Generate verification code
-    verification_code = generate_verification_code()
+    verification_code = utils.generate_verification_code()
     user.verification_code = verification_code
     user.code_expiry = datetime.utcnow() + timedelta(minutes=10)  # Code valid for 10 minutes
     db.commit()
-    
-    message = MessageSchema(
-        subject="OTP",
-        recipients=[user.email],
-        body=html(verification_code),
-        subtype=MessageType.html
-    )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    await utils.send_email(user.email,verification_code)
     return {"message": "email has been sent"}
 
 @router.post('/verify-code')
@@ -151,20 +118,12 @@ async def simple_send(user_credentials: schemas.AdminLogin, db: Session = Depend
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid credentials')
     
     # Generate verification code
-    verification_code = generate_verification_code()
+    verification_code = utils.generate_verification_code()
     admin.verification_code = verification_code
     admin.code_expiry = datetime.utcnow() + timedelta(minutes=10)  # Code valid for 10 minutes
     db.commit()
     
-    message = MessageSchema(
-        subject="OTP",
-        recipients=[admin.username],
-        body=html(verification_code),
-        subtype=MessageType.html
-    )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    await utils.send_email(admin.username,verification_code)
     return {"message": "email has been sent"}
 
 

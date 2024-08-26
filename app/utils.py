@@ -9,6 +9,30 @@ from cryptography.hazmat.backends import default_backend
 from base64 import b64decode, b64encode
 from cryptography.hazmat.primitives import padding
 import os
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+
+
+def generate_verification_code():
+    return secrets.token_hex(3)  # Générer un code de vérification
+
+
+conf = ConnectionConfig(
+    MAIL_USERNAME ="benmoumenfawzi@gmail.com",
+    MAIL_PASSWORD = "sxrm ddul wqxa btae",
+    MAIL_FROM = "benmoumenfawzi@gmail.com",
+    MAIL_PORT = 465,
+    MAIL_SERVER = "smtp.gmail.com",
+    MAIL_STARTTLS = False,
+    MAIL_SSL_TLS = True,
+    USE_CREDENTIALS = True,
+    VALIDATE_CERTS = True
+)
+
+
+def html(number) : 
+    return f"""
+<h1> Votre code d'authentification est : {number} </h1> 
+"""
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
@@ -106,3 +130,15 @@ def encrypt_data(data,pk) :
         encrypted_content_b64 = b64encode(encrypted_content)
 
         return encrypted_content_b64
+
+async def send_email(email,code) :    
+    message = MessageSchema(
+        subject="OTP",
+        recipients=[email],
+        body=html(code),
+        subtype=MessageType.html
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
+

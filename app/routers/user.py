@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from fastapi import Response, status, HTTPException, Depends,APIRouter, UploadFile, File, Body
 from .. import models,schemas,utils,oauth2
 from ..database import get_db
@@ -34,8 +35,10 @@ def get_users(db: Session = Depends(get_db), current_user = Depends(oauth2.get_c
     print(users[0].first_name)
     return users
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.UserPostResponse)
-def create_user(user : schemas.UserCreate, db: Session = Depends(get_db)):
+
+
+@router.post("/verify_email", status_code=status.HTTP_200_OK)
+async def create_user(user : schemas.UserEmailVerify, db: Session = Depends(get_db)):
     try:
         existing_user = db.query(models.User).filter(
         models.User.email == user.email,
@@ -45,13 +48,41 @@ def create_user(user : schemas.UserCreate, db: Session = Depends(get_db)):
         if existing_user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
         
-        user.private_key= utils.generate_aes_key(user.password)
-        user.password = utils.hash_pwd(user.password)
-        new_user = models.User(**(user.model_dump()))
+        param = db.query(models.Admin_Parameter).first() 
+
+        if not param:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Erreur lors de la generation de code verification")
+        
+        param.verification_code = utils.generate_verification_code()
+        param.code_expiry = datetime.utcnow() + timedelta(minutes=10)
+        db.commit()
+        db.refresh(param)
+        await utils.send_email(user.email,param.verification_code)
+        return {}
+    except HTTPException as e:
+        print(f"HTTPException: {e.status_code} - {e.detail}")
+        raise e
+
+@router.post("/", status_code=status.HTTP_201_CREATED)
+def create_user(user : schemas.UserCreate, db: Session = Depends(get_db)):
+    try:
+        param = db.query(models.Admin_Parameter).first()           
+        if not param:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erreur lors de la verification du code")
+        
+        if user.code != param.verification_code or param.code_expiry < datetime.utcnow():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='Invalid or expired verification code'
+            )
+        
+        user.user.private_key= utils.generate_aes_key(user.user.password)
+        user.user.password = utils.hash_pwd(user.user.password)
+        new_user = models.User(**(user.user.model_dump()))
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        return new_user
+        return {}
     except HTTPException as e:
         print(f"HTTPException: {e.status_code} - {e.detail}")
         raise e
@@ -183,7 +214,6 @@ def update_user_image(
     print("User image path updated in DB:", user.img_src)
 
     return user
-
 
 
 @router.put('/{id}',response_model=schemas.UserGetResponse)
