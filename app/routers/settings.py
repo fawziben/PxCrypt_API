@@ -154,3 +154,50 @@ def get_settings(db: Session = Depends(get_db), current_admin: int = Depends(oau
     )
     
     return response
+
+@router.put("/verify_extensions")
+def verify_allowed_extensions(
+    ext: str,
+    db: Session = Depends(get_db),
+    current_user=Depends(oauth2.get_current_user)
+):
+    try:
+        # Print the extension being checked
+        print(f"Checking extension: {ext}")
+        
+        # Retrieve the admin parameters
+        param = db.query(models.Admin_Parameter).first()
+        if not param:
+            print("Admin parameters not found in the database.")
+            raise HTTPException(status_code=404, detail="Admin parameters not found")
+        
+        # Log the state of 'all_extensions'
+        print(f"All extensions allowed: {param.all_extensions}")
+        
+        # Check the state of 'all_extensions'
+        if param.all_extensions:
+            # If 'all_extensions' is True, return 200 status
+            print("All extensions are allowed.")
+            return {"message": "All extensions are allowed", "status_code": 200}
+
+        # If 'all_extensions' is False, verify if 'ext' is in the extensions table
+        extension_exists = db.query(models.Extension).filter(models.Extension.extension == ext).first()
+        
+        if extension_exists:
+            # Extension is allowed
+            print(f"Extension '{ext}' is allowed.")
+            return {"message": f"Extension '{ext}' is allowed", "status_code": 200}
+        else:
+            # Extension is not allowed
+            print(f"Extension '{ext}' is not allowed.")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Extension is not allowed")
+
+    except HTTPException as he:
+        # Handle known exceptions gracefully
+        print(f"HTTP Exception: {he.detail}")
+        raise he
+
+    except Exception as e:
+        # Catch any unexpected exceptions
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

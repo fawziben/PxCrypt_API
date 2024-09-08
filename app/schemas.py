@@ -80,6 +80,7 @@ class ShareRecipient(BaseModel):
     id: int
     download: bool
     message: str
+    is_admin: bool
 
 class GroupTitleUpdate(BaseModel):
     title: str

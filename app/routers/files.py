@@ -33,7 +33,6 @@ async def share_file(id: int, recipients: list[schemas.ShareRecipient], db: Sess
 
 from sqlalchemy.orm import joinedload
 
-from sqlalchemy.orm import joinedload
 
 @router.post('/group_share/{id}', status_code=status.HTTP_200_OK)
 async def share_file(
@@ -46,15 +45,18 @@ async def share_file(
         user_ids = set()
         new_files = []
 
+        # Récupérer les IDs des groupes d'admin présents dans recipients
+        admin_group_ids = set(recipient.id for recipient in recipients if recipient.is_admin)
+
         for recipient in recipients:
             group_id = recipient.id
             download = recipient.download
             message = recipient.message
 
-            # Récupérer les utilisateurs du groupe
+            # Récupérer les utilisateurs des groupes de l'utilisateur
             group_users = db.query(models.User_Group).filter(
                 models.User_Group.id_group == group_id
-            ).options(joinedload(models.User_Group.user)).all()
+            ).all()
 
             if not group_users:
                 print(f"Group with id {group_id} does not exist or has no users.")
@@ -69,10 +71,29 @@ async def share_file(
                 if user_exists:
                     if user_id not in user_ids:
                         user_ids.add(user_id)
+                        print(f"User ID {user_id} exists in users table.")
                         new_sfile = models.Sfile(id_receiver=user_id, id_file=id, download=download, message=message)
                         new_files.append(new_sfile)
                 else:
                     print(f"User ID {user_id} does not exist in users table.")
+
+        # Inclure les utilisateurs des groupes administratifs présents dans recipients
+        for admin_group_id in admin_group_ids:
+            admin_group_users = db.query(models.User, models.Admin_User_Group).join(
+                models.Admin_User_Group, models.User.id == models.Admin_User_Group.id_user
+            ).filter(models.Admin_User_Group.id_group == admin_group_id).all()
+
+            for admin_user, admin_user_group in admin_group_users:
+                user_id = admin_user.id
+
+                # Vérifier si l'utilisateur existe dans la table users
+                if user_id not in user_ids:
+                    user_ids.add(user_id)
+                    print(f"Admin User ID {user_id} exists in users table.")
+                    new_sfile = models.Sfile(id_receiver=user_id, id_file=id, download=recipient.download, message=recipient.message)
+                    new_files.append(new_sfile)
+                else:
+                    print(f"Admin User ID {user_id} is already included.")
 
         if new_files:
             # Ajouter les nouvelles entrées dans la base de données

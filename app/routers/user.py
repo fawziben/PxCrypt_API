@@ -64,25 +64,71 @@ async def create_user(user : schemas.UserEmailVerify, db: Session = Depends(get_
         raise e
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-def create_user(user : schemas.UserCreate, db: Session = Depends(get_db)):
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     try:
-        param = db.query(models.Admin_Parameter).first()           
+        # Retrieve the admin parameters
+        param = db.query(models.Admin_Parameter).first()
         if not param:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Erreur lors de la verification du code")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="Erreur lors de la verification du code"
+            )
         
+        # Check verification code and expiration
         if user.code != param.verification_code or param.code_expiry < datetime.utcnow():
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Invalid or expired verification code'
             )
+
+        # Extract domain from email
+        email_domain = f"@{user.user.email.split('@')[1]}"
+        print(f"Extracted email domain: {email_domain}")
+
+        # Determine if all domains are allowed
+        if param.all_domains:
+            user_state = True
+        else:
+            # Check if the domain is allowed
+            domain_exists = db.query(models.Domain).filter(models.Domain.domain == email_domain).first()
+            if domain_exists:
+                user_state = True
+            else:
+                user_state = False
+
+        # Generate keys and hash password
+        user.user.private_key = utils.generate_aes_key(user.user.password)
+        user.user.password = utils.hash_pwd(user.user.password)
+
+        # Set the user's state based on the domain check
+        # user.user.state = user_state
+
+        # Create new user in the database
+        new_user = models.User(**(user.user.model_dump()))
+        new_user.state = user_state
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
         
+        return {"state": user_state}
+
+    except HTTPException as e:
+        print(f"HTTPException: {e.status_code} - {e.detail}")
+        raise e
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.post("/create", status_code=status.HTTP_201_CREATED)
+def create_user(user : schemas.UserCreate, db: Session = Depends(get_db)):
+    try:
         user.user.private_key= utils.generate_aes_key(user.user.password)
         user.user.password = utils.hash_pwd(user.user.password)
         new_user = models.User(**(user.user.model_dump()))
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
-        return {}
+        return {"id" : new_user.id}
     except HTTPException as e:
         print(f"HTTPException: {e.status_code} - {e.detail}")
         raise e
@@ -254,6 +300,31 @@ def update_user(id : int , storage: schemas.UpdateStorage,  db: Session = Depend
 
 @router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(id: int, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_admin)):
+    # Vérifiez si l'utilisateur existe
+    user = db.query(models.User).filter(models.User.id == id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Supprimer les références dans les autres tables
+    db.query(models.Admin_User_Group).filter(models.Admin_User_Group.id_user == id).delete()
+    db.query(models.User_Group).filter(models.User_Group.id_user == id).delete()
+    db.query(models.Ufile).filter(models.Ufile.id_owner == id).delete()
+    db.query(models.Sfile).filter(models.Sfile.id_receiver == id).delete()  # Assurez-vous que la table et la colonne sont correctes
+
+    # Supprimer les fichiers de l'utilisateur et le répertoire associé
+    user_files_directory = os.path.join(user.email)
+    if os.path.exists(user_files_directory):
+        shutil.rmtree(user_files_directory)
+
+    # Supprimer l'utilisateur
+    db.delete(user)
+    db.commit()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.delete('/delete/{id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(id: int, db: Session = Depends(get_db)):
     # Vérifiez si l'utilisateur existe
     user = db.query(models.User).filter(models.User.id == id).first()
     if not user:

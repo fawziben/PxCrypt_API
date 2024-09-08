@@ -16,17 +16,29 @@ router = APIRouter(
 
 @router.get('/', status_code=status.HTTP_200_OK)
 def get_groups_by_user(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+    # Récupérer les groupes appartenant à l'utilisateur
     groups = db.query(models.Group).filter(models.Group.id_owner == current_user.id).all()
-    if not groups:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No sharing lists")
+
+    # Récupérer tous les groupes administratifs
+    admin_groups = db.query(models.Admin_Group).all()
+
+    # Vérifier si aucune donnée n'est trouvée
+    if not groups and not admin_groups:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No groups found")
 
     result = []
+
+    # Traiter les groupes normaux de l'utilisateur
     for group in groups:
-        user_groups = db.query(models.User, models.User_Group).join(models.User_Group, models.User.id == models.User_Group.id_user).filter(models.User_Group.id_group == group.id).all()
+        user_groups = db.query(models.User, models.User_Group).join(
+            models.User_Group, models.User.id == models.User_Group.id_user
+        ).filter(models.User_Group.id_group == group.id).all()
+        
         group_data = {
             "id": group.id,
             "title": group.title,
             "description": group.description,
+            "is_admin": False,  # Indique que c'est un groupe normal
             "users": [
                 {
                     "id": user.id,
@@ -34,12 +46,39 @@ def get_groups_by_user(db: Session = Depends(get_db), current_user = Depends(oau
                     "last_name": user.last_name,
                     "email": user.email,
                     "user_group": user_group.id,
-                    "img_src" : user.img_src
+                    "img_src": user.img_src
                 }
                 for user, user_group in user_groups
             ]
         }
         result.append(group_data)
+
+    # Traiter tous les groupes administratifs
+    for admin_group in admin_groups:
+        admin_user_groups = db.query(models.User, models.Admin_User_Group).join(
+            models.Admin_User_Group, models.User.id == models.Admin_User_Group.id_user
+        ).filter(models.Admin_User_Group.id_group == admin_group.id).all()
+        
+        admin_group_data = {
+            "id": admin_group.id,
+            "title": admin_group.title,
+            "description": admin_group.description,
+            "is_admin": True,  # Indique que c'est un groupe de l'administrateur
+            "users": [
+                {
+                    "id": user.id,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "email": user.email,
+                    "admin_user_group": admin_user_group.id,
+                    "img_src": user.img_src
+                }
+                for user, admin_user_group in admin_user_groups
+            ]
+        }
+        result.append(admin_group_data)
+
+    return result
 
     return result
 

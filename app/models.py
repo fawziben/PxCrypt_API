@@ -135,3 +135,16 @@ class Domain(Base) :
 
     id = Column(Integer, primary_key=True, nullable=False)
     domain = Column(String, nullable=False)
+
+
+class User_Notification(Base):
+    __tablename__ = "user_notifications"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    id_user = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id_notifier = Column(Integer, nullable=True)
+    type = Column(String, nullable=True)
+    unread = Column(Boolean, default=True)
+
+    # Définir la relation avec User
+    user = relationship("User", foreign_keys=[id_user])

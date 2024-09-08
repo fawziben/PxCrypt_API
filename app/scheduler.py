@@ -5,6 +5,7 @@ from .database import engine
 from . import models
 import os
 from pytz import utc
+from . import anti_spying
 
 # Créez une session de base de données
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -50,6 +51,7 @@ def delete_expired_files():
 
 def start_scheduler():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(delete_expired_files, 'interval', days=1, id='delete_expired_files', replace_existing=True)
+    scheduler.add_job(delete_expired_files, 'interval', minutes=10, id='delete_expired_files', replace_existing=True)
+    scheduler.add_job(anti_spying.scan_libraries_for_spying, 'interval', days=1, id='verify spying', replace_existing=True)
     scheduler.start()
     print("Scheduler started, job will run every 2 minutes.")
