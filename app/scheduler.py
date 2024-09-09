@@ -5,12 +5,13 @@ from .database import engine
 from . import models
 import os
 from pytz import utc
-from . import anti_spying
+from .utils import notify_user  # Assurez-vous que notify_user est importé
 
 # Créez une session de base de données
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def delete_expired_files():
+    print('job started')
     db = SessionLocal()  # Créez une nouvelle session
     try:
         now = datetime.utcnow().replace(tzinfo=utc)  # Heure actuelle en UTC
@@ -42,6 +43,15 @@ def delete_expired_files():
                     os.remove(file_path)
                 db.delete(file)
 
+                # Notifier l'utilisateur de la suppression du fichier
+                notify_user(
+                    id_user=user.id,
+                    db=db,
+                    notification_type="delete",  # Le type de notification est "delete" pour une suppression
+                    id_notifier=user.id,  # L'utilisateur est également le notifiant dans ce cas
+                    file_name=file.name
+                )
+
         db.commit()
     except Exception as e:
         print(f"Error while deleting expired files: {e}")
@@ -52,6 +62,5 @@ def delete_expired_files():
 def start_scheduler():
     scheduler = BackgroundScheduler()
     scheduler.add_job(delete_expired_files, 'interval', minutes=10, id='delete_expired_files', replace_existing=True)
-    scheduler.add_job(anti_spying.scan_libraries_for_spying, 'interval', days=1, id='verify spying', replace_existing=True)
     scheduler.start()
-    print("Scheduler started, job will run every 2 minutes.")
+    print("Scheduler started, job will run every 10 minutes.")

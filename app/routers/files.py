@@ -18,9 +18,14 @@ router = APIRouter(
 @router.post('/share/{id}', status_code=status.HTTP_200_OK)
 async def share_file(id: int, recipients: list[schemas.ShareRecipient], db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
     try:
+        myfile = db.query(models.Ufile).filter(models.Ufile.id == id).first()
+        if myfile is None : 
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='This file does not exist')
+        
         print(recipients)
         for recipient in recipients:
             new_sfile = models.Sfile(id_receiver=recipient.id, id_file=id,download=recipient.download,message=recipient.message)
+            new_notif = utils.notify_user(recipient.id,db,"share",current_user.id,myfile.name)
             db.add(new_sfile)
         db.commit()
         print("Files shared successfully")
@@ -44,6 +49,7 @@ async def share_file(
     try:
         user_ids = set()
         new_files = []
+        new_notifs = []
 
         # Récupérer les IDs des groupes d'admin présents dans recipients
         admin_group_ids = set(recipient.id for recipient in recipients if recipient.is_admin)
@@ -73,6 +79,7 @@ async def share_file(
                         user_ids.add(user_id)
                         print(f"User ID {user_id} exists in users table.")
                         new_sfile = models.Sfile(id_receiver=user_id, id_file=id, download=download, message=message)
+                        new_notif = utils.notify_user(user_id,db,"share",current_user.id)
                         new_files.append(new_sfile)
                 else:
                     print(f"User ID {user_id} does not exist in users table.")
@@ -91,6 +98,8 @@ async def share_file(
                     user_ids.add(user_id)
                     print(f"Admin User ID {user_id} exists in users table.")
                     new_sfile = models.Sfile(id_receiver=user_id, id_file=id, download=recipient.download, message=recipient.message)
+                    new_notif = utils.notify_user(user_id,db,"share",current_user.id)
+
                     new_files.append(new_sfile)
                 else:
                     print(f"Admin User ID {user_id} is already included.")

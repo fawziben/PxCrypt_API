@@ -142,9 +142,14 @@ class User_Notification(Base):
 
     id = Column(Integer, primary_key=True, nullable=False)
     id_user = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    id_notifier = Column(Integer, nullable=True)
+    id_notifier = Column(Integer, ForeignKey('users.id'))
     type = Column(String, nullable=True)
     unread = Column(Boolean, default=True)
+    date = Column(TIMESTAMP(timezone=True),
+                        nullable=False, server_default=text('now()'))
+    file_name = Column(String, nullable=True)  # Nouvelle colonne
+
 
     # Définir la relation avec User
     user = relationship("User", foreign_keys=[id_user])
+    notifier = relationship("User", foreign_keys=[id_notifier])

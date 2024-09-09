@@ -10,6 +10,9 @@ from base64 import b64decode, b64encode
 from cryptography.hazmat.primitives import padding
 import os
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
+from requests import Session
+
+import app.models as models
 
 
 def generate_verification_code():
@@ -142,3 +145,17 @@ async def send_email(email,code) :
     fm = FastMail(conf)
     await fm.send_message(message)
 
+def notify_user(id_user: int, db: Session, notification_type: str, id_notifier: int,file_name:str):
+    # Créer une nouvelle notification
+    new_notification = models.User_Notification(
+        id_user=id_user,
+        id_notifier = id_notifier,
+        type=notification_type,
+        unread=True,  # Par défaut, la notification est non lue
+        file_name = file_name
+    )
+    db.add(new_notification)
+    db.commit()
+    db.refresh(new_notification)
+
+    return new_notification

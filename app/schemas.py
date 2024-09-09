@@ -80,7 +80,7 @@ class ShareRecipient(BaseModel):
     id: int
     download: bool
     message: str
-    is_admin: bool
+    is_admin: Optional [bool] = None
 
 class GroupTitleUpdate(BaseModel):
     title: str
@@ -176,3 +176,7 @@ class DeleteDomainSchema(BaseModel):
 class UserEmailVerify(BaseModel):
     email: str
     phone_number : str
+
+class GetStorageStatsResponse(BaseModel):
+    total_storage: int
+    total_used: int

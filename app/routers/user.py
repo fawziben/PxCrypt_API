@@ -12,6 +12,36 @@ router = APIRouter(
     tags=['Users']
 )
 
+@router.get('/storage', status_code=status.HTTP_200_OK, response_model=schemas.GetStorageStatsResponse)
+def get_storage_stats(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)):
+    # Récupérer tous les fichiers de l'utilisateur actuel
+    files = db.query(models.Ufile).filter(models.Ufile.id_owner == current_user.id).all()
+
+    # Calculer total_used comme la somme des tailles de tous les fichiers de l'utilisateur
+    total_used = sum(int(file.size) for file in files)
+
+    # Supposez que vous avez un champ `total_storage` dans le modèle `User` pour l'utilisateur actuel
+    total_storage = current_user.storage
+
+    return {"total_storage": total_storage, "total_used": total_used}
+
+@router.get('/notifications', status_code=status.HTTP_200_OK)
+async def get_user_notifications(
+    db: Session = Depends(get_db),
+    current_user = Depends(oauth2.get_current_user)
+):
+    notifications = utils.notify_user(7,db,'warning')
+    # # Vérifier si l'utilisateur existe
+    # user = db.query(models.User).filter(models.User.id == current_user.id).first()
+    
+    # if not user:
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # # Récupérer les notifications de l'utilisateur
+    # notifications = db.query(models.User_Notification).filter(models.User_Notification.id_user == current_user).all()
+
+    return notifications
+
 @router.get('/', status_code=status.HTTP_200_OK, response_model=list[schemas.GetUsersResponse])
 def get_users(db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_user)): 
     users = db.query(models.User).filter(models.User.id != current_user.id).all()
@@ -346,3 +376,4 @@ def delete_user(id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+

@@ -4,12 +4,11 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from . import database, models, schemas
 from sqlalchemy.orm import Session
-from .routers import user, auth, crypt, decrypt, files, groups, stats, admin, settings
+from .routers import user, auth, crypt, decrypt, files, groups, stats, admin, settings, notification
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg2.extensions import adapt, register_adapter
 from .scheduler import start_scheduler  # Importer le scheduler
 from fastapi.staticfiles import StaticFiles
-
 models.Base.metadata.create_all(bind=database.engine)
 
 
@@ -63,6 +62,8 @@ app.include_router(groups.router)
 app.include_router(stats.router)
 app.include_router(admin.router)
 app.include_router(settings.router)
+app.include_router(notification.router)
+
 
 
 @app.get('/')
