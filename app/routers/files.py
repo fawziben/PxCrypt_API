@@ -51,6 +51,8 @@ async def share_file(
         new_files = []
         new_notifs = []
 
+        my_file = db.query(models.Ufile).filter(models.Ufile.id == id).first()
+        print(my_file.name)
         # Récupérer les IDs des groupes d'admin présents dans recipients
         admin_group_ids = set(recipient.id for recipient in recipients if recipient.is_admin)
 
@@ -79,7 +81,7 @@ async def share_file(
                         user_ids.add(user_id)
                         print(f"User ID {user_id} exists in users table.")
                         new_sfile = models.Sfile(id_receiver=user_id, id_file=id, download=download, message=message)
-                        new_notif = utils.notify_user(user_id,db,"share",current_user.id)
+                        new_notif = utils.notify_user(user_id,db,"share",current_user.id,my_file.name)
                         new_files.append(new_sfile)
                 else:
                     print(f"User ID {user_id} does not exist in users table.")
@@ -98,7 +100,7 @@ async def share_file(
                     user_ids.add(user_id)
                     print(f"Admin User ID {user_id} exists in users table.")
                     new_sfile = models.Sfile(id_receiver=user_id, id_file=id, download=recipient.download, message=recipient.message)
-                    new_notif = utils.notify_user(user_id,db,"share",current_user.id)
+                    new_notif = utils.notify_user(user_id,db,"share",current_user.id,my_file.name)
 
                     new_files.append(new_sfile)
                 else:

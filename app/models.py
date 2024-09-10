@@ -153,3 +153,4 @@ class User_Notification(Base):
     # Définir la relation avec User
     user = relationship("User", foreign_keys=[id_user])
     notifier = relationship("User", foreign_keys=[id_notifier])
+
