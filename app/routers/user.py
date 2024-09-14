@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 import shutil
 import os
 import base64
+from sqlalchemy import or_
 
 router = APIRouter(
     prefix="/users",
@@ -71,9 +72,9 @@ def get_users(db: Session = Depends(get_db), current_user = Depends(oauth2.get_c
 async def create_user(user : schemas.UserEmailVerify, db: Session = Depends(get_db)):
     try:
         existing_user = db.query(models.User).filter(
-        models.User.email == user.email,
+        or_(models.User.email == user.email,
         models.User.phone_number == user.phone_number
-        ).first()        
+        )).first()        
         
         if existing_user:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
@@ -97,6 +98,7 @@ async def create_user(user : schemas.UserEmailVerify, db: Session = Depends(get_
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     try:
         # Retrieve the admin parameters
+        admin = db.query(models.Admin).first()
         param = db.query(models.Admin_Parameter).first()
         if not param:
             raise HTTPException(
@@ -138,7 +140,10 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         new_user.state = user_state
         db.add(new_user)
         db.commit()
-        db.refresh(new_user)
+        db.refresh(new_user) 
+
+        if (not new_user.state) : 
+            utils.notify_admin(admin.id,db,"unallowed_domain",new_user.id,"")
         
         return {"state": user_state}
 
@@ -310,8 +315,9 @@ def update_user(id : int , db: Session = Depends(get_db), current_user = Depends
     user= db.query(models.User).filter(models.User.id == id).first()
     if not user : 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="User with this index does not exist")
-    
     user.state = not user.state
+    if(user.state) : 
+        user.attempts = 0
     db.commit()
     db.refresh(user)
     return {}
@@ -329,17 +335,21 @@ def update_user(id : int , storage: schemas.UpdateStorage,  db: Session = Depend
 
 
 @router.delete('/{id}', status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(id: int, db: Session = Depends(get_db), current_user = Depends(oauth2.get_current_admin)):
+def delete_user(id: int, db: Session = Depends(get_db), current_user=Depends(oauth2.get_current_admin)):
     # Vérifiez si l'utilisateur existe
     user = db.query(models.User).filter(models.User.id == id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    # Supprimer les références dans les autres tables
+    
+    # Supprimer les références dans les autres tables liées à l'utilisateur
     db.query(models.Admin_User_Group).filter(models.Admin_User_Group.id_user == id).delete()
     db.query(models.User_Group).filter(models.User_Group.id_user == id).delete()
     db.query(models.Ufile).filter(models.Ufile.id_owner == id).delete()
     db.query(models.Sfile).filter(models.Sfile.id_receiver == id).delete()  # Assurez-vous que la table et la colonne sont correctes
+    db.query(models.User_Notification).filter(models.User_Notification.id_notifier == id).delete()
+    
+    # Supprimer les références dans la table admin_notifications
+    db.query(models.Admin_Notification).filter(models.Admin_Notification.id_notifier == id).delete()
 
     # Supprimer les fichiers de l'utilisateur et le répertoire associé
     user_files_directory = os.path.join(user.email)

@@ -141,7 +141,7 @@ class User_Notification(Base):
     __tablename__ = "user_notifications"
 
     id = Column(Integer, primary_key=True, nullable=False)
-    id_user = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id_user = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     id_notifier = Column(Integer, ForeignKey('users.id'))
     type = Column(String, nullable=True)
     unread = Column(Boolean, default=True)
@@ -154,3 +154,19 @@ class User_Notification(Base):
     user = relationship("User", foreign_keys=[id_user])
     notifier = relationship("User", foreign_keys=[id_notifier])
 
+class Admin_Notification(Base):
+    __tablename__ = "admin_notifications"
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    id_admin = Column(Integer, ForeignKey("admins.id", ondelete="SET NULL"), nullable=True)
+    id_notifier = Column(Integer, ForeignKey('users.id'))
+    type = Column(String, nullable=True)
+    unread = Column(Boolean, default=True)
+    date = Column(TIMESTAMP(timezone=True),
+                        nullable=False, server_default=text('now()'))
+    detail = Column(String, nullable=True)  # Nouvelle colonne
+
+
+    # Définir la relation avec User
+    admin = relationship("Admin", foreign_keys=[id_admin])
+    notifier = relationship("User", foreign_keys=[id_notifier])

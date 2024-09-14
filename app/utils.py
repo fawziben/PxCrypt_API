@@ -159,3 +159,18 @@ def notify_user(id_user: int, db: Session, notification_type: str, id_notifier: 
     db.refresh(new_notification)
 
     return new_notification
+
+def notify_admin(id_admin: int, db: Session, notification_type: str, id_notifier: int,detail:str):
+    # Créer une nouvelle notification
+    new_notification = models.Admin_Notification(
+        id_admin=id_admin,
+        id_notifier = id_notifier,
+        type=notification_type,
+        unread=True,  # Par défaut, la notification est non lue
+        detail = detail
+    )
+    db.add(new_notification)
+    db.commit()
+    db.refresh(new_notification)
+
+    return new_notification

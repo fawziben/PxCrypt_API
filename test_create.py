@@ -1,17 +1,13 @@
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from app.main import app
-from app.database import Base, get_db
-from app import models
 
 client = TestClient(app)
 user_id = None
 user_informations = {
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "john.doe@example.com",
+    "first_name": "Fawzi",
+    "last_name": "Ben",
+    "email": "test@gmail.com",
     "phone_number": "0123456789",
     "password": "strong_password",
 }

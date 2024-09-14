@@ -16,13 +16,25 @@ router = APIRouter(tags=['Authentication'])
 @router.post("/email")
 async def simple_send(user_credentials: schemas.UserLogin, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == user_credentials.email).first()
-    
-    if not user or not utils.verify_pwd(user_credentials.password, user.password):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid credentials')
+    if not user :
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User with this email does not exist')
     
     if not user.state :
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='account has been blocked')
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='account has been blocked')
     
+    params= db.query(models.Admin_Parameter).first()
+    print(user.attempts)
+    if not utils.verify_pwd(user_credentials.password, user.password):  
+        user.attempts += 1
+        if(int(params.login_attempt) <= int(user.attempts)) :
+            user.state=False 
+            admin = db.query(models.Admin).first()
+            utils.notify_admin(admin.id,db,"total_attempts_reached",user.id,params.login_attempt)
+
+        db.commit()
+        db.refresh(user)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid credentials')
+
     access_token = oauth2.create_access_token(data={"user_id": user.id})
 
     if not user.TFA:
